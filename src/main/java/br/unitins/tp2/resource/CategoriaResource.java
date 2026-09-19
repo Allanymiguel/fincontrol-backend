@@ -2,7 +2,10 @@ package br.unitins.tp2.resource;
 
 import java.util.List;
 
-import br.unitins.tp2.dto.CategoriaDTO;
+import br.unitins.tp2.dto.CategoriaRequestDTO;
+import br.unitins.tp2.dto.CategoriaResponseDTO;
+import br.unitins.tp2.dto.PageResponse;
+import br.unitins.tp2.mapper.CategoriaResponseMapper;
 import br.unitins.tp2.model.Categoria;
 import br.unitins.tp2.service.CategoriaService;
 import jakarta.inject.Inject;
@@ -27,33 +30,40 @@ public class CategoriaResource {
     CategoriaService service;
 
     @GET
-    public List<Categoria> buscarTodos(@QueryParam("page") @DefaultValue("0") int page,
-                                    @QueryParam("pageSize") @DefaultValue("100") int pageSize) {
-        return service.findAll(page, pageSize);
+    public PageResponse<CategoriaResponseDTO> buscarTodos(@QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("pageSize") @DefaultValue("10") int pageSize) {
+        List<Categoria> categorias = service.findAll(page, pageSize);
+        long totalItems = service.count();
+
+        return PageResponse.of(categorias, page, pageSize, totalItems, CategoriaResponseMapper::toResponse);
     }
 
     @GET
     @Path("/nome/{nome}")
-    public List<Categoria> buscarPorNome(@PathParam("nome") String nome, @QueryParam("page") @DefaultValue("0") int page,
-                                    @QueryParam("pageSize") @DefaultValue("100") int pageSize) {
-        return service.findByNome(nome, page, pageSize);
+    public PageResponse<CategoriaResponseDTO> buscarPorNome(@PathParam("nome") String nome,
+            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("pageSize") @DefaultValue("10") int pageSize) {
+        List<Categoria> categorias = service.findByNome(nome, page, pageSize);
+        long totalItems = service.count(nome);
+
+        return PageResponse.of(categorias, page, pageSize, totalItems, CategoriaResponseMapper::toResponse);
     }
 
     @GET
     @Path("/{id}")
-    public Categoria buscarPorId(@PathParam("id") Long id) {
-        return service.findById(id);
+    public CategoriaResponseDTO buscarPorId(@PathParam("id") Long id) {
+        return CategoriaResponseMapper.toResponse(service.findById(id));
     }
 
     @POST
-    public Categoria incluir(CategoriaDTO dto) {
-        return service.create(dto);
+    public CategoriaResponseDTO incluir(CategoriaRequestDTO dto) {
+        return CategoriaResponseMapper.toResponse(service.create(dto));
     }
 
     @PUT
     @Path("/{id}")
-    public void alterar(@PathParam("id") Long id, CategoriaDTO dto) {
-        service.update(id, dto);
+    public void alterar(@PathParam("id") Long id, CategoriaRequestDTO categoria) {
+        service.update(id, categoria);
     }
 
     @DELETE
@@ -61,17 +71,4 @@ public class CategoriaResource {
     public void apagar(@PathParam("id") Long id) {
         service.delete(id);
     }
-
-    @GET
-    @Path("/count")
-    public Long total() {
-        return service.count();
-    }
-
-    @GET
-    @Path("/nome/{nome}/count")
-    public Long totalPorNome(@PathParam("nome") String nome) {
-        return service.count(nome);
-    }
-
 }

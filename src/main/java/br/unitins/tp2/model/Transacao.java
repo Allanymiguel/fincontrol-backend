@@ -7,7 +7,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 @Entity
@@ -16,7 +16,7 @@ public class Transacao extends DefaultEntity {
     @Column(length = 120, nullable = false)
     private String descricao;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(nullable = false, precision = 14, scale = 2)
     private BigDecimal valor;
 
     @Column(nullable = false)
@@ -30,7 +30,8 @@ public class Transacao extends DefaultEntity {
     @Column(length = 20, nullable = false)
     private EscopoTransacao escopo;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
 
     public String getDescricao() {
@@ -80,5 +81,4 @@ public class Transacao extends DefaultEntity {
     public void setCategoria(Categoria categoria) {
         this.categoria = categoria;
     }
-
 }

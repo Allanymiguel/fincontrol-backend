@@ -8,14 +8,14 @@ import jakarta.persistence.Enumerated;
 @Entity
 public class Categoria extends DefaultEntity {
 
-    @Column(length = 60, nullable = false, unique = true)
+    @Column(length = 60, nullable = false)
     private String nome;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     private TipoTransacao tipo;
 
-    @Column(length = 7, nullable = false)
+    @Column(length = 7)
     private String cor;
 
     @Column(nullable = false)
@@ -52,5 +52,4 @@ public class Categoria extends DefaultEntity {
     public void setAtiva(Boolean ativa) {
         this.ativa = ativa;
     }
-
 }

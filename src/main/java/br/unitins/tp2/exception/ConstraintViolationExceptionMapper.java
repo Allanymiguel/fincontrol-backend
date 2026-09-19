@@ -2,10 +2,8 @@ package br.unitins.tp2.exception;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jspecify.annotations.NonNull;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.ConstraintViolation;
@@ -30,23 +28,9 @@ public class ConstraintViolationExceptionMapper implements ExceptionMapper<Const
 
     @Override
     public Response toResponse(ConstraintViolationException e) {
-        // List<Problem.FieldError> fieldErrors = e.getConstraintViolations()
-        //         .stream()
-        //         .map(this::toFieldError)
-        //         .collect(Collectors.toList());
-
-        List<Problem.@NonNull FieldError> fieldErrors = e.getConstraintViolations()
+        List<Problem.FieldError> fieldErrors = e.getConstraintViolations()
                 .stream()
-                .collect(Collectors.toMap(
-                        v -> lastProperty(v.getPropertyPath()),
-                        v -> new Problem.FieldError(
-                                lastProperty(v.getPropertyPath()),
-                                v.getMessage()
-                        ),
-                        (existing, replacement) -> existing
-                ))
-                .values()
-                .stream()
+                .map(this::toFieldError)
                 .toList();
 
         Problem p = new Problem();

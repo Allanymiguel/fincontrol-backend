@@ -13,7 +13,7 @@ import jakarta.ws.rs.ext.Provider;
 
 @Provider
 @ApplicationScoped
-public class ValidationExceptionMapper implements ExceptionMapper<ValidationException> {
+public class ResourceNotFoundExceptionMapper implements ExceptionMapper<ResourceNotFoundException> {
 
     @Context
     UriInfo uri;
@@ -22,15 +22,14 @@ public class ValidationExceptionMapper implements ExceptionMapper<ValidationExce
     String baseUrl;
 
     @Override
-    public Response toResponse(ValidationException e) {
+    public Response toResponse(ResourceNotFoundException e) {
         var p = new Problem();
-        p.type = baseUrl + "/errors/validation-error";
-        p.title = "Erro de validação";
-        p.status = Response.Status.BAD_REQUEST.getStatusCode();
+        p.type = baseUrl + "/errors/not-found";
+        p.title = "Recurso não encontrado";
+        p.status = Response.Status.NOT_FOUND.getStatusCode();
         p.detail = e.getMessage();
         p.instance = (uri != null ? uri.getRequestUri().getPath() : null);
         p.timestamp = OffsetDateTime.now();
-        p.errors = e.getFieldErrors();
 
         return Response.status(p.status).type("application/problem+json").entity(p).build();
     }

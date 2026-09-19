@@ -2,7 +2,10 @@ package br.unitins.tp2.resource;
 
 import java.util.List;
 
-import br.unitins.tp2.dto.TransacaoDTO;
+import br.unitins.tp2.dto.PageResponse;
+import br.unitins.tp2.dto.TransacaoRequestDTO;
+import br.unitins.tp2.dto.TransacaoResponseDTO;
+import br.unitins.tp2.mapper.TransacaoResponseMapper;
 import br.unitins.tp2.model.Transacao;
 import br.unitins.tp2.service.TransacaoService;
 import jakarta.inject.Inject;
@@ -27,42 +30,72 @@ public class TransacaoResource {
     TransacaoService service;
 
     @GET
-    public List<Transacao> buscarTodos(@QueryParam("page") @DefaultValue("0") int page,
-                                    @QueryParam("pageSize") @DefaultValue("100") int pageSize) {
-        return service.findAll(page, pageSize);
+    public PageResponse<TransacaoResponseDTO> buscarTodos(
+            @QueryParam("descricao") String descricao,
+            @QueryParam("idCategoria") Long idCategoria,
+            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("pageSize") @DefaultValue("10") int pageSize) {
+
+        boolean hasDescricao = descricao != null && !descricao.isBlank();
+        boolean hasCategoria = idCategoria != null;
+
+        List<Transacao> transacoes;
+        long totalItems;
+
+        if (hasDescricao && hasCategoria) {
+            transacoes = service.findByDescricaoAndCategoria(descricao, idCategoria, page, pageSize);
+            totalItems = service.count(descricao, idCategoria);
+        } else if (hasDescricao) {
+            transacoes = service.findByDescricao(descricao, page, pageSize);
+            totalItems = service.count(descricao);
+        } else if (hasCategoria) {
+            transacoes = service.findByCategoria(idCategoria, page, pageSize);
+            totalItems = service.countByCategoria(idCategoria);
+        } else {
+            transacoes = service.findAll(page, pageSize);
+            totalItems = service.count();
+        }
+
+        return PageResponse.of(transacoes, page, pageSize, totalItems, TransacaoResponseMapper::toResponse);
     }
 
     @GET
     @Path("/descricao/{descricao}")
-    public List<Transacao> buscarPorDescricao(@PathParam("descricao") String descricao,
-                                    @QueryParam("page") @DefaultValue("0") int page,
-                                    @QueryParam("pageSize") @DefaultValue("100") int pageSize) {
-        return service.findByDescricao(descricao, page, pageSize);
+    public PageResponse<TransacaoResponseDTO> buscarPorDescricao(@PathParam("descricao") String descricao,
+            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("pageSize") @DefaultValue("10") int pageSize) {
+        List<Transacao> transacoes = service.findByDescricao(descricao, page, pageSize);
+        long totalItems = service.count(descricao);
+
+        return PageResponse.of(transacoes, page, pageSize, totalItems, TransacaoResponseMapper::toResponse);
     }
 
     @GET
     @Path("/categoria/{idCategoria}")
-    public List<Transacao> buscarPorCategoria(@PathParam("idCategoria") Long idCategoria,
-                                    @QueryParam("page") @DefaultValue("0") int page,
-                                    @QueryParam("pageSize") @DefaultValue("100") int pageSize) {
-        return service.findByCategoria(idCategoria, page, pageSize);
+    public PageResponse<TransacaoResponseDTO> buscarPorCategoria(@PathParam("idCategoria") Long idCategoria,
+            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("pageSize") @DefaultValue("10") int pageSize) {
+        List<Transacao> transacoes = service.findByCategoria(idCategoria, page, pageSize);
+        long totalItems = service.countByCategoria(idCategoria);
+
+        return PageResponse.of(transacoes, page, pageSize, totalItems, TransacaoResponseMapper::toResponse);
     }
 
     @GET
     @Path("/{id}")
-    public Transacao buscarPorId(@PathParam("id") Long id) {
-        return service.findById(id);
+    public TransacaoResponseDTO buscarPorId(@PathParam("id") Long id) {
+        return TransacaoResponseMapper.toResponse(service.findById(id));
     }
 
     @POST
-    public Transacao incluir(TransacaoDTO dto) {
-        return service.create(dto);
+    public TransacaoResponseDTO incluir(TransacaoRequestDTO dto) {
+        return TransacaoResponseMapper.toResponse(service.create(dto));
     }
 
     @PUT
     @Path("/{id}")
-    public void alterar(@PathParam("id") Long id, TransacaoDTO dto) {
-        service.update(id, dto);
+    public void alterar(@PathParam("id") Long id, TransacaoRequestDTO transacao) {
+        service.update(id, transacao);
     }
 
     @DELETE
@@ -70,17 +103,4 @@ public class TransacaoResource {
     public void apagar(@PathParam("id") Long id) {
         service.delete(id);
     }
-
-    @GET
-    @Path("/count")
-    public Long total() {
-        return service.count();
-    }
-
-    @GET
-    @Path("/descricao/{descricao}/count")
-    public Long totalPorDescricao(@PathParam("descricao") String descricao) {
-        return service.count(descricao);
-    }
-
 }

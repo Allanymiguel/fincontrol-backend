@@ -19,7 +19,6 @@ public class DefaultEntity {
     private LocalDateTime dataCadastro;
 
     private LocalDateTime dataAlteracao;
-    
 
     @PrePersist
     public void registrarDataCadastro() {
@@ -35,7 +34,7 @@ public class DefaultEntity {
         return id;
     }
 
-    public void setId(Long id) {
+    protected void setId(Long id) {
         this.id = id;
     }
 
@@ -43,7 +42,7 @@ public class DefaultEntity {
         return dataCadastro;
     }
 
-    public void setDataCadastro(LocalDateTime dataCadastro) {
+    protected void setDataCadastro(LocalDateTime dataCadastro) {
         this.dataCadastro = dataCadastro;
     }
 
@@ -51,10 +50,7 @@ public class DefaultEntity {
         return dataAlteracao;
     }
 
-    public void setDataAlteracao(LocalDateTime dataAlteracao) {
+    protected void setDataAlteracao(LocalDateTime dataAlteracao) {
         this.dataAlteracao = dataAlteracao;
     }
-
-    
-
 }
