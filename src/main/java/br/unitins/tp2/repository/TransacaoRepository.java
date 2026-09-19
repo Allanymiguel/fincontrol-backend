@@ -9,7 +9,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class TransacaoRepository implements PanacheRepository<Transacao> {
 
     public PanacheQuery<Transacao> findByDescricao(String descricao) {
-        return find("descricao like ?1 order by data desc, descricao", "%" + descricao + "%");
+        return find("lower(descricao) like lower(?1) order by data desc, descricao", "%" + descricao + "%");
     }
 
     public PanacheQuery<Transacao> findByCategoria(Long idCategoria) {
@@ -17,7 +17,7 @@ public class TransacaoRepository implements PanacheRepository<Transacao> {
     }
 
     public PanacheQuery<Transacao> findByDescricaoAndCategoria(String descricao, Long idCategoria) {
-        return find("descricao like ?1 and categoria.id = ?2 order by data desc, descricao",
+        return find("lower(descricao) like lower(?1) and categoria.id = ?2 order by data desc, descricao",
                 "%" + descricao + "%", idCategoria);
     }
 
