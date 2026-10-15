@@ -1,0 +1,80 @@
+package br.unitins.tp2.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+
+// Pessoa (fisica ou juridica) com quem o usuario movimenta dinheiro: cliente ou fornecedor.
+@Entity
+public class Contato extends DefaultEntity {
+
+    @Column(length = 120, nullable = false)
+    private String nome;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    private TipoContato tipo;
+
+    // CPF (11 digitos) ou CNPJ (14 digitos), salvo somente com numeros
+    @Column(length = 14, nullable = false, unique = true)
+    private String documento;
+
+    @Column(length = 120)
+    private String email;
+
+    @Column(length = 11)
+    private String telefone;
+
+    @Embedded
+    private Endereco endereco = new Endereco();
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public TipoContato getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(TipoContato tipo) {
+        this.tipo = tipo;
+    }
+
+    public String getDocumento() {
+        return documento;
+    }
+
+    public void setDocumento(String documento) {
+        this.documento = documento;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getTelefone() {
+        return telefone;
+    }
+
+    public void setTelefone(String telefone) {
+        this.telefone = telefone;
+    }
+
+    public Endereco getEndereco() {
+        return endereco;
+    }
+
+    public void setEndereco(Endereco endereco) {
+        this.endereco = endereco;
+    }
+}
