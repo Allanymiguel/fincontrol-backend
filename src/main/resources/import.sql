@@ -72,3 +72,11 @@ insert into CategoriaPadrao (nome, tipo, cor, arquivada) values('Alimentação',
 insert into CategoriaPadrao (nome, tipo, cor, arquivada) values('Transporte', 'DESPESA', '#F59E0B', false);
 insert into CategoriaPadrao (nome, tipo, cor, arquivada) values('Moradia', 'DESPESA', '#8B5CF6', false);
 insert into CategoriaPadrao (nome, tipo, cor, arquivada) values('Telefonia', 'DESPESA', '#6B7280', true);
+
+-- parametros fiscais (valores de exemplo para desenvolvimento: confira os oficiais antes de usar)
+insert into ParametroFiscal (chave, valor, vigenciaInicio, vigenciaFim) values('SALARIO_MINIMO', 1412.00, '2024-01-01', '2024-12-31');
+insert into ParametroFiscal (chave, valor, vigenciaInicio, vigenciaFim) values('SALARIO_MINIMO', 1518.00, '2025-01-01', null);
+insert into ParametroFiscal (chave, valor, vigenciaInicio, vigenciaFim) values('TETO_MEI', 81000.00, '2018-01-01', null);
+insert into ParametroFiscal (chave, valor, vigenciaInicio, vigenciaFim) values('DAS_MEI_PERCENTUAL_INSS', 5.00, '2018-01-01', null);
+insert into ParametroFiscal (chave, valor, vigenciaInicio, vigenciaFim) values('DAS_MEI_ICMS_COMERCIO', 1.00, '2018-01-01', null);
+insert into ParametroFiscal (chave, valor, vigenciaInicio, vigenciaFim) values('DAS_MEI_ISS_SERVICO', 5.00, '2018-01-01', null);
