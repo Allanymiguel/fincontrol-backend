@@ -2,6 +2,8 @@ package br.unitins.tp2.resource;
 
 import java.util.List;
 
+import org.eclipse.microprofile.jwt.JsonWebToken;
+
 import br.unitins.tp2.dto.PageResponse;
 import br.unitins.tp2.dto.UsuarioResponseDTO;
 import br.unitins.tp2.mapper.UsuarioResponseMapper;
@@ -28,6 +30,9 @@ public class UsuarioAdminResource {
     @Inject
     UsuarioService service;
 
+    @Inject
+    JsonWebToken jwt;
+
     // busca = parte do nome ou do email
     @GET
     public PageResponse<UsuarioResponseDTO> buscarTodos(
@@ -50,10 +55,11 @@ public class UsuarioAdminResource {
         return UsuarioResponseMapper.toResponse(service.findById(id));
     }
 
-    // devolve o usuario ja com o novo estado, para a listagem atualizar a linha
+    // devolve o usuario ja com o novo estado, para a listagem atualizar a linha.
+    // O sub do token impede o admin de desativar a propria conta.
     @PATCH
     @Path("/{id}/ativar")
     public UsuarioResponseDTO alternarAtivo(@PathParam("id") Long id) {
-        return UsuarioResponseMapper.toResponse(service.alternarAtivo(id));
+        return UsuarioResponseMapper.toResponse(service.alternarAtivo(id, jwt.getSubject()));
     }
 }

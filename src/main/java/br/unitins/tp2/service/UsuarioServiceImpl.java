@@ -14,7 +14,6 @@ import br.unitins.tp2.util.DocumentoUtil;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 
 @ApplicationScoped
 public class UsuarioServiceImpl implements UsuarioService {
@@ -61,16 +60,32 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
     }
 
-    // ativa se estiver inativo e desativa se estiver ativo
-    // TODO: com o Keycloak ligado, impedir que o admin desative a propria conta
-    // e refletir o bloqueio no Keycloak (usuario inativo nao deve conseguir logar)
+    // Ativa se estiver inativo e desativa se estiver ativo, no Keycloak (desativado nao loga)
+    // e no perfil local. O Keycloak muda primeiro; se o perfil local falhar, ele e revertido.
     @Override
-    @Transactional
-    public Usuario alternarAtivo(long id) {
+    public Usuario alternarAtivo(long id, String keycloakIdDoAdmin) {
         Usuario usuario = buscarUsuarioOuFalhar(id);
-        usuario.setAtivo(!usuario.getAtivo());
+        boolean novoAtivo = !usuario.getAtivo();
 
-        return usuario;
+        if (!novoAtivo && usuario.getKeycloakId() != null && usuario.getKeycloakId().equals(keycloakIdDoAdmin))
+            throw ValidationException.of("ativo", "Você não pode desativar a própria conta.");
+
+        // usuario so do import.sql, sem conta no Keycloak: muda so o perfil local
+        String keycloakId = usuario.getKeycloakId();
+        if (keycloakId != null)
+            keycloakAdminService.definirAtivo(keycloakId, novoAtivo);
+
+        try {
+            return QuarkusTransaction.requiringNew().call(() -> {
+                Usuario atualizado = buscarUsuarioOuFalhar(id);
+                atualizado.setAtivo(novoAtivo);
+                return atualizado;
+            });
+        } catch (RuntimeException e) {
+            if (keycloakId != null)
+                keycloakAdminService.definirAtivo(keycloakId, !novoAtivo);
+            throw e;
+        }
     }
 
     @Override

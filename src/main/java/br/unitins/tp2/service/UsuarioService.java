@@ -10,7 +10,7 @@ import jakarta.validation.Valid;
 public interface UsuarioService {
 
     Usuario registrar(@Valid RegistroRequestDTO registro);
-    Usuario alternarAtivo(long id);
+    Usuario alternarAtivo(long id, String keycloakIdDoAdmin);
     Usuario findById(long id);
     List<Usuario> findAll(int page, int pageSize);
     List<Usuario> findByNomeOuEmail(String busca, int page, int pageSize);

@@ -10,6 +10,7 @@ import br.unitins.tp2.client.KeycloakAdminClient;
 import br.unitins.tp2.client.KeycloakErro;
 import br.unitins.tp2.client.KeycloakRole;
 import br.unitins.tp2.client.KeycloakUsuario;
+import br.unitins.tp2.exception.ResourceNotFoundException;
 import br.unitins.tp2.exception.ServicoExternoException;
 import br.unitins.tp2.exception.ValidationException;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -91,7 +92,7 @@ public class KeycloakAdminService {
             } catch (WebApplicationException novaFalha) {
                 throw traduzirErro(novaFalha);
             }
-        } catch (ValidationException | ServicoExternoException e) {
+        } catch (ValidationException | ServicoExternoException | ResourceNotFoundException e) {
             throw e;
         } catch (RuntimeException e) {
             LOG.warnf(e, "Não foi possível conectar à Admin API do Keycloak");
@@ -107,6 +108,9 @@ public class KeycloakAdminService {
         int status = e.getResponse().getStatus();
         if (status == 409)
             return ValidationException.of("email", "Já existe uma conta com esse e-mail.");
+        // ex.: usuario excluido direto no console do Keycloak
+        if (status == 404)
+            return new ResourceNotFoundException("Usuário não encontrado no Keycloak.");
 
         KeycloakErro erro = KeycloakTokenService.lerErro(e);
         LOG.errorf("Admin API do Keycloak respondeu HTTP %d (%s). Confira as roles da service account.",
