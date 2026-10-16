@@ -54,3 +54,8 @@ insert into contato (nome, tipo, documento, email, telefone, cep, logradouro, nu
 insert into usuario (nome, email, documento, telefone, perfilFiscal, atividadeMei, papel, ativo) values('Administrador', 'admin@fincontrol.com', '11144477735', '63999991111', 'PF', null, 'ADMIN', true);
 insert into usuario (nome, email, documento, telefone, perfilFiscal, atividadeMei, papel, ativo, cep, logradouro, numero, complemento, bairro, id_municipio) values('João Pereira', 'joao@email.com', '11222333000181', '63988887777', 'MEI', 'SERVICO', 'USER', true, '77001002', 'Praça Girassóis', '200', null, 'Plano Diretor Norte', 1);
 insert into usuario (nome, email, documento, telefone, perfilFiscal, atividadeMei, papel, ativo) values('Ana Lima', 'ana@email.com', '12345678909', null, 'PF', null, 'USER', false);
+
+-- planos de assinatura
+insert into plano (nome, precoMensal, precoAnual, limiteTransacoes, limiteMetas, liberaRecorrencias, liberaFiscal, liberaExportacao, ativo) values('Essencial', 19.90, 199.00, 1000, 10, true, false, true, true);
+insert into plano (nome, precoMensal, precoAnual, limiteTransacoes, limiteMetas, liberaRecorrencias, liberaFiscal, liberaExportacao, ativo) values('Empreendedor', 39.90, 399.00, 10000, 50, true, true, true, true);
+insert into plano (nome, precoMensal, precoAnual, limiteTransacoes, limiteMetas, liberaRecorrencias, liberaFiscal, liberaExportacao, ativo) values('Legado 2025', 14.90, 149.00, 500, 5, false, false, false, false);
