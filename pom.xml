@@ -77,24 +77,10 @@
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-          <groupId>io.quarkus</groupId>
-          <artifactId>quarkus-smallrye-jwt</artifactId>
-        </dependency>
-    
-        <dependency>
-          <groupId>io.quarkus</groupId>
-          <artifactId>quarkus-smallrye-jwt-build</artifactId>
-        </dependency>
-
-        <!-- autenticacao via Keycloak (OIDC); desligada em application.properties ate o Keycloak subir -->
+        <!-- autenticacao via Keycloak: ele emite o JWT, o quarkus-oidc so valida -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-oidc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-keycloak-authorization</artifactId>
         </dependency>
     </dependencies>
 

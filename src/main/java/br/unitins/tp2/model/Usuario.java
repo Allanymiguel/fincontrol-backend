@@ -10,9 +10,13 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 
 // Dono dos dados do sistema. O login e a senha ficam no Keycloak; aqui ficam o perfil
-// (dados fiscais, endereco, papel) e o vinculo com os registros de cada usuario, feito pelo email.
+// (dados fiscais, endereco, papel) e o vinculo com o usuario do Keycloak (keycloakId).
 @Entity
 public class Usuario extends DefaultEntity {
+
+    // id do usuario no Keycloak = claim "sub" do token. Nao muda, mesmo se o email mudar.
+    @Column(length = 36, unique = true)
+    private String keycloakId;
 
     @Column(length = 120, nullable = false)
     private String nome;
@@ -57,6 +61,14 @@ public class Usuario extends DefaultEntity {
     @AttributeOverride(name = "bairro", column = @Column(name = "bairro", length = 60))
     @AssociationOverride(name = "municipio", joinColumns = @JoinColumn(name = "id_municipio"))
     private Endereco endereco;
+
+    public String getKeycloakId() {
+        return keycloakId;
+    }
+
+    public void setKeycloakId(String keycloakId) {
+        this.keycloakId = keycloakId;
+    }
 
     public String getNome() {
         return nome;

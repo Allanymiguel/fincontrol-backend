@@ -50,10 +50,11 @@ insert into municipio (nome, codigo_ibge, id_estado) values('Araguaína', '17021
 insert into contato (nome, tipo, documento, email, telefone, cep, logradouro, numero, complemento, bairro, id_municipio) values('Maria Souza', 'CLIENTE', '52998224725', 'maria@email.com', '63999990000', '77001002', 'Praça Girassóis', 's/n', null, 'Plano Diretor Norte', 1);
 insert into contato (nome, tipo, documento, email, telefone, cep, logradouro, numero, complemento, bairro, id_municipio) values('Papelaria Central LTDA', 'FORNECEDOR', '11222333000181', 'contato@papelaria.com', '6332150000', '77001002', 'Praça Girassóis', '100', 'Sala 2', 'Plano Diretor Norte', 1);
 
--- usuarios (o login fica no Keycloak; aqui so o perfil, por isso senhaHash fica nulo)
-insert into usuario (nome, email, documento, telefone, perfilFiscal, atividadeMei, papel, ativo) values('Administrador', 'admin@fincontrol.com', '11144477735', '63999991111', 'PF', null, 'ADMIN', true);
-insert into usuario (nome, email, documento, telefone, perfilFiscal, atividadeMei, papel, ativo, cep, logradouro, numero, complemento, bairro, id_municipio) values('João Pereira', 'joao@email.com', '11222333000181', '63988887777', 'MEI', 'SERVICO', 'USER', true, '77001002', 'Praça Girassóis', '200', null, 'Plano Diretor Norte', 1);
-insert into usuario (nome, email, documento, telefone, perfilFiscal, atividadeMei, papel, ativo) values('Ana Lima', 'ana@email.com', '12345678909', null, 'PF', null, 'USER', false);
+-- usuarios (o login fica no Keycloak; aqui so o perfil, por isso senhaHash fica nulo).
+-- keycloakId = id do mesmo usuario em keycloak/fincontrol-realm.json
+insert into usuario (keycloakId, nome, email, documento, telefone, perfilFiscal, atividadeMei, papel, ativo) values('0f1c2a3b-0000-4000-8000-000000000001', 'Administrador', 'admin@fincontrol.com', '11144477735', '63999991111', 'PF', null, 'ADMIN', true);
+insert into usuario (keycloakId, nome, email, documento, telefone, perfilFiscal, atividadeMei, papel, ativo, cep, logradouro, numero, complemento, bairro, id_municipio) values('0f1c2a3b-0000-4000-8000-000000000002', 'João Pereira', 'joao@email.com', '11222333000181', '63988887777', 'MEI', 'SERVICO', 'USER', true, '77001002', 'Praça Girassóis', '200', null, 'Plano Diretor Norte', 1);
+insert into usuario (keycloakId, nome, email, documento, telefone, perfilFiscal, atividadeMei, papel, ativo) values('0f1c2a3b-0000-4000-8000-000000000003', 'Ana Lima', 'ana@email.com', '12345678909', null, 'PF', null, 'USER', false);
 
 -- planos de assinatura
 insert into plano (nome, precoMensal, precoAnual, limiteTransacoes, limiteMetas, liberaRecorrencias, liberaFiscal, liberaExportacao, ativo) values('Essencial', 19.90, 199.00, 1000, 10, true, false, true, true);

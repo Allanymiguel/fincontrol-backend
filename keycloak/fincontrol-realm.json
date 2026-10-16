@@ -1,0 +1,76 @@
+{
+  "realm": "fincontrol",
+  "displayName": "FinControl",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "accessTokenLifespan": 1800,
+  "ssoSessionIdleTimeout": 28800,
+  "ssoSessionMaxLifespan": 86400,
+  "roles": {
+    "realm": [
+      { "name": "USER", "description": "Usuário do FinControl (área operacional)" },
+      { "name": "ADMIN", "description": "Administrador do FinControl (área administrativa)" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "fincontrol-backend",
+      "name": "FinControl back-end",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "fincontrol-dev-secret",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "id": "0f1c2a3b-0000-4000-8000-000000000001",
+      "username": "admin@fincontrol.com",
+      "email": "admin@fincontrol.com",
+      "firstName": "Administrador",
+      "lastName": "FinControl",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "admin12345", "temporary": false }],
+      "realmRoles": ["USER", "ADMIN"]
+    },
+    {
+      "id": "0f1c2a3b-0000-4000-8000-000000000002",
+      "username": "joao@email.com",
+      "email": "joao@email.com",
+      "firstName": "João",
+      "lastName": "Pereira",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "joao12345", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "id": "0f1c2a3b-0000-4000-8000-000000000003",
+      "username": "ana@email.com",
+      "email": "ana@email.com",
+      "firstName": "Ana",
+      "lastName": "Lima",
+      "enabled": false,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "ana12345", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "username": "service-account-fincontrol-backend",
+      "enabled": true,
+      "serviceAccountClientId": "fincontrol-backend",
+      "clientRoles": {
+        "realm-management": ["manage-users", "view-users", "query-users", "view-realm"]
+      }
+    }
+  ]
+}
