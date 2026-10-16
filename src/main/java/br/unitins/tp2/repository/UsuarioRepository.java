@@ -13,6 +13,14 @@ public class UsuarioRepository implements PanacheRepository<Usuario> {
         return find("lower(nome) like lower(?1) or lower(email) like lower(?1) order by nome", "%" + busca + "%");
     }
 
+    public Usuario findByKeycloakId(String keycloakId) {
+        return find("keycloakId", keycloakId).firstResult();
+    }
+
+    public Usuario findByEmail(String email) {
+        return find("lower(email) = lower(?1)", email).firstResult();
+    }
+
     @Override
     public PanacheQuery<Usuario> findAll() {
         return find("order by nome");
