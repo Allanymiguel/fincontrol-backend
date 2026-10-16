@@ -1,13 +1,14 @@
 package br.unitins.tp2.repository;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import br.unitins.tp2.model.CategoriaPadrao;
 import br.unitins.tp2.model.TipoTransacao;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
-import io.quarkus.panache.common.Parameters;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
@@ -17,16 +18,16 @@ public class CategoriaPadraoRepository implements PanacheRepository<CategoriaPad
     // As arquivadas ficam no fim da lista.
     public PanacheQuery<CategoriaPadrao> findByFiltros(String nome, TipoTransacao tipo) {
         List<String> condicoes = new ArrayList<>();
-        Parameters params = new Parameters();
+        Map<String, Object> params = new HashMap<>();
 
         if (nome != null && !nome.isBlank()) {
             condicoes.add("lower(nome) like lower(:nome)");
-            params.and("nome", "%" + nome.trim() + "%");
+            params.put("nome", "%" + nome.trim() + "%");
         }
 
         if (tipo != null) {
             condicoes.add("tipo = :tipo");
-            params.and("tipo", tipo);
+            params.put("tipo", tipo);
         }
 
         String where = condicoes.isEmpty() ? "" : String.join(" and ", condicoes) + " ";
