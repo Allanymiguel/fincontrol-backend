@@ -64,3 +64,11 @@ insert into plano (nome, precoMensal, precoAnual, limiteTransacoes, limiteMetas,
 insert into cupom (codigo, percentualDesconto, validade, ativo) values('BEMVINDO10', 10.00, '2026-12-31', true);
 insert into cupom (codigo, percentualDesconto, validade, ativo) values('BLACKFRIDAY', 30.00, '2026-11-30', true);
 insert into cupom (codigo, percentualDesconto, validade, ativo) values('LANCAMENTO', 50.00, '2026-03-31', false);
+
+-- categorias padrao (copiadas para cada conta nova; arquivadas nao sao copiadas)
+insert into CategoriaPadrao (nome, tipo, cor, arquivada) values('Salário', 'RECEITA', '#4F46E5', false);
+insert into CategoriaPadrao (nome, tipo, cor, arquivada) values('Vendas', 'RECEITA', '#10B981', false);
+insert into CategoriaPadrao (nome, tipo, cor, arquivada) values('Alimentação', 'DESPESA', '#EF4444', false);
+insert into CategoriaPadrao (nome, tipo, cor, arquivada) values('Transporte', 'DESPESA', '#F59E0B', false);
+insert into CategoriaPadrao (nome, tipo, cor, arquivada) values('Moradia', 'DESPESA', '#8B5CF6', false);
+insert into CategoriaPadrao (nome, tipo, cor, arquivada) values('Telefonia', 'DESPESA', '#6B7280', true);
