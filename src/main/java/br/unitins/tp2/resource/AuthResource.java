@@ -4,10 +4,12 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import br.unitins.tp2.dto.LoginRequestDTO;
 import br.unitins.tp2.dto.RefreshTokenRequestDTO;
+import br.unitins.tp2.dto.RegistroRequestDTO;
 import br.unitins.tp2.dto.TokenResponseDTO;
 import br.unitins.tp2.dto.UsuarioResponseDTO;
 import br.unitins.tp2.mapper.UsuarioResponseMapper;
 import br.unitins.tp2.service.AuthService;
+import br.unitins.tp2.service.UsuarioService;
 import io.quarkus.security.Authenticated;
 import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
@@ -28,6 +30,9 @@ public class AuthResource {
     AuthService service;
 
     @Inject
+    UsuarioService usuarioService;
+
+    @Inject
     JsonWebToken jwt;
 
     @POST
@@ -35,6 +40,14 @@ public class AuthResource {
     @PermitAll
     public TokenResponseDTO login(LoginRequestDTO dto) {
         return service.login(dto);
+    }
+
+    // cria a conta (Keycloak + perfil) com papel USER; depois o usuario faz login normalmente
+    @POST
+    @Path("/registro")
+    @PermitAll
+    public UsuarioResponseDTO registrar(RegistroRequestDTO dto) {
+        return UsuarioResponseMapper.toResponse(usuarioService.registrar(dto));
     }
 
     @POST
