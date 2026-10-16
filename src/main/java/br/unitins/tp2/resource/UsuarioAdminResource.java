@@ -7,6 +7,7 @@ import br.unitins.tp2.dto.UsuarioResponseDTO;
 import br.unitins.tp2.mapper.UsuarioResponseMapper;
 import br.unitins.tp2.model.Usuario;
 import br.unitins.tp2.service.UsuarioService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -17,8 +18,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
-// Somente consulta e ativacao: os usuarios serao criados pelo Keycloak.
-// TODO: @RolesAllowed("ADMIN") - gestao de usuarios e exclusiva do administrador (RN12)
+// Somente consulta e ativacao: as contas sao criadas pelo cadastro (POST /auth/registro).
+// Gestao de usuarios e exclusiva do administrador (RN12)
+@RolesAllowed("ADMIN")
 @Path("admin/usuarios")
 @Produces(MediaType.APPLICATION_JSON)
 public class UsuarioAdminResource {

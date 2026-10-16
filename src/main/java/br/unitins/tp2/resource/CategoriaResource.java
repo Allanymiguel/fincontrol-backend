@@ -8,6 +8,7 @@ import br.unitins.tp2.dto.PageResponse;
 import br.unitins.tp2.mapper.CategoriaResponseMapper;
 import br.unitins.tp2.model.Categoria;
 import br.unitins.tp2.service.CategoriaService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -21,7 +22,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
-// TODO: @RolesAllowed("USER") - cada usuario so acessa as proprias categorias (RN12)
+// TODO (RN12): devolver so as categorias do usuario logado (falta o vinculo com Usuario)
+@RolesAllowed("USER")
 @Path("categorias")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)

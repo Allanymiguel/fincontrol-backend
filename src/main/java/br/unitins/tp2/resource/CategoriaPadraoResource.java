@@ -8,6 +8,7 @@ import br.unitins.tp2.dto.PageResponse;
 import br.unitins.tp2.mapper.CategoriaPadraoResponseMapper;
 import br.unitins.tp2.model.CategoriaPadrao;
 import br.unitins.tp2.service.CategoriaPadraoService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
@@ -22,7 +23,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
 // Sem DELETE: categoria padrao e arquivada, nunca excluida.
-// TODO: @RolesAllowed("ADMIN") - cadastro de categorias padrao e exclusivo do administrador (RN12)
+// Cadastro de categorias padrao e exclusivo do administrador (RN12)
+@RolesAllowed("ADMIN")
 @Path("categorias-padrao")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)

@@ -8,6 +8,7 @@ import br.unitins.tp2.dto.TransacaoResponseDTO;
 import br.unitins.tp2.mapper.TransacaoResponseMapper;
 import br.unitins.tp2.model.Transacao;
 import br.unitins.tp2.service.TransacaoService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -21,7 +22,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
-// TODO: @RolesAllowed("USER") - cada usuario so acessa as proprias transacoes (RN12)
+// TODO (RN12): devolver so as transacoes do usuario logado (falta o vinculo com Usuario)
+@RolesAllowed("USER")
 @Path("transacoes")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)

@@ -8,6 +8,7 @@ import br.unitins.tp2.dto.ParametroFiscalResponseDTO;
 import br.unitins.tp2.mapper.ParametroFiscalResponseMapper;
 import br.unitins.tp2.model.ParametroFiscal;
 import br.unitins.tp2.service.ParametroFiscalService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -21,7 +22,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
-// TODO: @RolesAllowed("ADMIN") - cadastro de parametros fiscais e exclusivo do administrador (RN12)
+// Cadastro de parametros fiscais e exclusivo do administrador (RN12)
+@RolesAllowed("ADMIN")
 @Path("parametros-fiscais")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)

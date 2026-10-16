@@ -8,6 +8,7 @@ import br.unitins.tp2.dto.PageResponse;
 import br.unitins.tp2.mapper.CupomResponseMapper;
 import br.unitins.tp2.model.Cupom;
 import br.unitins.tp2.service.CupomService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -21,7 +22,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
-// TODO: @RolesAllowed("ADMIN") - cadastro de cupons e exclusivo do administrador (RN12)
+// Cadastro de cupons e exclusivo do administrador (RN12)
+@RolesAllowed("ADMIN")
 @Path("cupons")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)

@@ -11,6 +11,7 @@ import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.mapper.FaixaIrpfResponseMapper;
 import br.unitins.tp2.model.FaixaIrpf;
 import br.unitins.tp2.service.FaixaIrpfService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -24,7 +25,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
-// TODO: @RolesAllowed("ADMIN") - cadastro das faixas do IRPF e exclusivo do administrador (RN12)
+// Cadastro das faixas do IRPF e exclusivo do administrador (RN12)
+@RolesAllowed("ADMIN")
 @Path("faixas-irpf")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
