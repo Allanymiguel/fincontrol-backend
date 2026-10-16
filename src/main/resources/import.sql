@@ -80,3 +80,15 @@ insert into ParametroFiscal (chave, valor, vigenciaInicio, vigenciaFim) values('
 insert into ParametroFiscal (chave, valor, vigenciaInicio, vigenciaFim) values('DAS_MEI_PERCENTUAL_INSS', 5.00, '2018-01-01', null);
 insert into ParametroFiscal (chave, valor, vigenciaInicio, vigenciaFim) values('DAS_MEI_ICMS_COMERCIO', 1.00, '2018-01-01', null);
 insert into ParametroFiscal (chave, valor, vigenciaInicio, vigenciaFim) values('DAS_MEI_ISS_SERVICO', 5.00, '2018-01-01', null);
+
+-- faixas da tabela progressiva mensal do IRPF (valores de exemplo: confira a tabela oficial da Receita)
+insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir, vigenciaInicio) values(0.00, 2259.20, 0.00, 0.00, '2024-02-01');
+insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir, vigenciaInicio) values(2259.21, 2826.65, 7.50, 169.44, '2024-02-01');
+insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir, vigenciaInicio) values(2826.66, 3751.05, 15.00, 381.44, '2024-02-01');
+insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir, vigenciaInicio) values(3751.06, 4664.68, 22.50, 662.77, '2024-02-01');
+insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir, vigenciaInicio) values(4664.69, null, 27.50, 896.00, '2024-02-01');
+insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir, vigenciaInicio) values(0.00, 2428.80, 0.00, 0.00, '2025-05-01');
+insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir, vigenciaInicio) values(2428.81, 2826.65, 7.50, 182.16, '2025-05-01');
+insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir, vigenciaInicio) values(2826.66, 3751.05, 15.00, 394.16, '2025-05-01');
+insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir, vigenciaInicio) values(3751.06, 4664.68, 22.50, 675.49, '2025-05-01');
+insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir, vigenciaInicio) values(4664.69, null, 27.50, 908.73, '2025-05-01');
