@@ -6,9 +6,12 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum StatusAssinatura {
+    // aguardando pagamento (RN15: pagamento aprovado -> ATIVA)
     PENDENTE(1L, "Pendente"),
     ATIVA(2L, "Ativa"),
-    CANCELADA(3L, "Cancelada");
+    CANCELADA(3L, "Cancelada"),
+    SUSPENSA(4L, "Suspensa"),
+    EXPIRADA(5L, "Expirada");
 
     private final Long ID;
     private final String NOME;

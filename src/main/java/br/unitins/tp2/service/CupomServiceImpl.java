@@ -4,8 +4,10 @@ import java.util.List;
 
 import br.unitins.tp2.dto.CupomRequestDTO;
 import br.unitins.tp2.exception.ResourceNotFoundException;
+import br.unitins.tp2.exception.Problem;
 import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.model.Cupom;
+import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.repository.CupomRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -16,6 +18,9 @@ public class CupomServiceImpl implements CupomService {
 
     @Inject
     CupomRepository cupomRepository;
+
+    @Inject
+    AssinaturaRepository assinaturaRepository;
 
     @Override
     @Transactional
@@ -38,9 +43,16 @@ public class CupomServiceImpl implements CupomService {
         aplicarDados(edicaoCupom, cupom);
     }
 
+    // cupom ja usado em assinatura nao pode ser excluido (quebraria o historico): o admin o desativa
     @Override
     @Transactional
     public void delete(long id) {
+        // a mensagem vai no detail para aparecer no aviso do front (nao ha campo ligado a exclusao)
+        if (assinaturaRepository.countByCupom(id) > 0) {
+            String mensagem = "Este cupom já foi usado em assinaturas e não pode ser excluído. Desative-o.";
+            throw new ValidationException(mensagem, List.of(new Problem.FieldError("ativo", mensagem)));
+        }
+
         if (!cupomRepository.deleteById(id))
             throw new ResourceNotFoundException("Cupom não encontrado.");
     }

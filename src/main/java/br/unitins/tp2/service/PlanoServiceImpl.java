@@ -4,8 +4,10 @@ import java.util.List;
 
 import br.unitins.tp2.dto.PlanoRequestDTO;
 import br.unitins.tp2.exception.ResourceNotFoundException;
+import br.unitins.tp2.exception.Problem;
 import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.model.Plano;
+import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.repository.PlanoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -16,6 +18,9 @@ public class PlanoServiceImpl implements PlanoService {
 
     @Inject
     PlanoRepository planoRepository;
+
+    @Inject
+    AssinaturaRepository assinaturaRepository;
 
     @Override
     @Transactional
@@ -38,11 +43,16 @@ public class PlanoServiceImpl implements PlanoService {
         aplicarDados(edicaoPlano, plano);
     }
 
-    // TODO: quando existir Assinatura, impedir a exclusao de plano com assinaturas
-    // (nesse caso o admin deve desativar o plano, como na RN06 das categorias)
+    // plano com assinaturas nao pode ser excluido (quebraria o historico): o admin o desativa
     @Override
     @Transactional
     public void delete(long id) {
+        // a mensagem vai no detail para aparecer no aviso do front (nao ha campo ligado a exclusao)
+        if (assinaturaRepository.countByPlano(id) > 0) {
+            String mensagem = "Este plano tem assinaturas e não pode ser excluído. Desative-o para não aceitar novas.";
+            throw new ValidationException(mensagem, List.of(new Problem.FieldError("ativo", mensagem)));
+        }
+
         if (!planoRepository.deleteById(id))
             throw new ResourceNotFoundException("Plano não encontrado.");
     }

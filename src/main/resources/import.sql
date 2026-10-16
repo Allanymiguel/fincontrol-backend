@@ -93,3 +93,9 @@ insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir,
 insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir, vigenciaInicio) values(2826.66, 3751.05, 15.00, 394.16, '2025-05-01');
 insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir, vigenciaInicio) values(3751.06, 4664.68, 22.50, 675.49, '2025-05-01');
 insert into FaixaIrpf (limiteInferior, limiteSuperior, aliquota, parcelaDeduzir, vigenciaInicio) values(4664.69, null, 27.50, 908.73, '2025-05-01');
+
+-- assinaturas (usuario 1..3 = admin, joao, ana; plano 1 = Essencial, 2 = Empreendedor; cupom 1 = BEMVINDO10)
+-- valorPago = preco do plano na periodicidade - desconto do cupom (Empreendedor anual 399,00 - 10% = 359,10)
+insert into assinatura (usuario_id, plano_id, cupom_id, status, dataInicio, dataFim, periodicidade, valorPago, formaPagamento, observacao) values(2, 1, null, 'CANCELADA', '2025-08-01', '2026-01-31', 'MENSAL', 19.90, 'CARTAO', 'Upgrade para o plano Empreendedor');
+insert into assinatura (usuario_id, plano_id, cupom_id, status, dataInicio, dataFim, periodicidade, valorPago, formaPagamento, observacao) values(2, 2, 1, 'ATIVA', '2026-02-01', null, 'ANUAL', 359.10, 'PIX', null);
+insert into assinatura (usuario_id, plano_id, cupom_id, status, dataInicio, dataFim, periodicidade, valorPago, formaPagamento, observacao) values(3, 1, null, 'EXPIRADA', '2025-03-01', '2025-09-01', 'MENSAL', 19.90, 'BOLETO', null);
