@@ -86,6 +86,16 @@
           <groupId>io.quarkus</groupId>
           <artifactId>quarkus-smallrye-jwt-build</artifactId>
         </dependency>
+
+        <!-- autenticacao via Keycloak (OIDC); desligada em application.properties ate o Keycloak subir -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-oidc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-keycloak-authorization</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

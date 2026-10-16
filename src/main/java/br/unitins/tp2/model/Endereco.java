@@ -25,7 +25,9 @@ public class Endereco {
     @Column(length = 60, nullable = false)
     private String bairro;
 
-    @ManyToOne(optional = false)
+    // obrigatoriedade so via @JoinColumn (e nao optional = false) para que o Usuario,
+    // que tem endereco opcional, consiga sobrescrever a coluna como anulavel
+    @ManyToOne
     @JoinColumn(name = "id_municipio", nullable = false)
     private Municipio municipio;
 

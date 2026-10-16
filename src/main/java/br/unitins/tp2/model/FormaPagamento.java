@@ -1,0 +1,39 @@
+package br.unitins.tp2.model;
+
+import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
+public enum FormaPagamento {
+    PIX(1L, "Pix"),
+    CARTAO(2L, "Cartão"),
+    BOLETO(3L, "Boleto");
+
+    private final Long ID;
+    private final String NOME;
+
+    FormaPagamento(Long id, String nome) {
+        this.ID = id;
+        this.NOME = nome;
+    }
+
+    public Long getId() {
+        return ID;
+    }
+
+    public String getNome() {
+        return NOME;
+    }
+
+    public static FormaPagamento valueOf(Long id) {
+        if (id == null)
+            return null;
+
+        for (FormaPagamento f : FormaPagamento.values()) {
+            if (Objects.equals(f.getId(), id))
+                return f;
+        }
+        return null;
+    }
+}
