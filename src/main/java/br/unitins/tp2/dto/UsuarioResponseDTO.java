@@ -1,0 +1,20 @@
+package br.unitins.tp2.dto;
+
+import br.unitins.tp2.model.AtividadeMei;
+import br.unitins.tp2.model.Papel;
+import br.unitins.tp2.model.PerfilFiscal;
+
+// senhaHash nunca sai da API
+public record UsuarioResponseDTO(
+    Long id,
+    String nome,
+    String email,
+    String documento,
+    String telefone,
+    PerfilFiscal perfilFiscal,
+    AtividadeMei atividadeMei,
+    Papel papel,
+    Boolean ativo,
+    EnderecoResponseDTO endereco
+) {
+}
