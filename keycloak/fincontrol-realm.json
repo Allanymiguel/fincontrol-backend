@@ -40,7 +40,7 @@
       "enabled": true,
       "emailVerified": true,
       "credentials": [{ "type": "password", "value": "admin12345", "temporary": false }],
-      "realmRoles": ["USER", "ADMIN"]
+      "realmRoles": ["ADMIN"]
     },
     {
       "id": "0f1c2a3b-0000-4000-8000-000000000002",

@@ -27,11 +27,13 @@ Depois suba o back (`./mvnw quarkus:dev`) e o front (`ng serve`) normalmente.
 
 | E-mail | Senha | Roles | Situação |
 |---|---|---|---|
-| `admin@fincontrol.com` | `admin12345` | USER, ADMIN | ativo |
+| `admin@fincontrol.com` | `admin12345` | ADMIN | ativo (só a área administrativa) |
 | `joao@email.com` | `joao12345` | USER | ativo (MEI) |
 | `ana@email.com` | `ana12345` | USER | **desativada** (o login é recusado) |
 
-Os ids desses usuários no realm são os mesmos de `Usuario.keycloakId` no `import.sql`, então o perfil local e a conta do Keycloak já nascem ligados. Contas novas são criadas pela tela **Criar conta** (`POST /auth/registro`).
+Os ids desses usuários no realm são os mesmos de `Usuario.keycloakId` no `import.sql`, então o perfil local e a conta do Keycloak já nascem ligados. Contas novas são criadas pela tela **Criar conta** (`POST /auth/registro`) e recebem a role `USER`.
+
+**Os papéis são separados:** o admin só tem `ADMIN` e não acessa Transações, Categorias e Contatos (403), que são dados pessoais de cada usuário. Para usar o controle financeiro, use uma conta `USER` (por exemplo `joao@email.com` ou uma criada em **Criar conta**).
 
 ### Voltar ao estado inicial
 
@@ -49,7 +51,7 @@ Para trabalhar sem o Docker, desligue o login nos dois lados:
 - **Back:** `FINCONTROL_AUTH=false ./mvnw quarkus:dev` (no PowerShell: `$env:FINCONTROL_AUTH='false'; ./mvnw quarkus:dev`). Só vale no modo dev; fora dele a autenticação é sempre exigida.
 - **Front:** `AUTH_HABILITADA = false` em `src/app/auth/auth-config.ts`.
 
-Todas as telas ficam acessíveis sem login. O app sobe mesmo com o Keycloak fora do ar; só o login responde 503.
+Todas as telas ficam acessíveis sem login. Sem token, as telas operacionais usam o João como usuário simulado (`fincontrol.auth.dev-fallback-email`). O app sobe mesmo com o Keycloak fora do ar; só o login responde 503.
 
 ## Endpoints de autenticação
 
