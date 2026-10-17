@@ -8,6 +8,7 @@ import br.unitins.tp2.exception.Problem;
 import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.model.Plano;
 import br.unitins.tp2.repository.AssinaturaRepository;
+import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.PlanoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -21,6 +22,9 @@ public class PlanoServiceImpl implements PlanoService {
 
     @Inject
     AssinaturaRepository assinaturaRepository;
+
+    @Inject
+    PagamentoRepository pagamentoRepository;
 
     @Override
     @Transactional
@@ -43,12 +47,12 @@ public class PlanoServiceImpl implements PlanoService {
         aplicarDados(edicaoPlano, plano);
     }
 
-    // plano com assinaturas nao pode ser excluido (quebraria o historico): o admin o desativa
+    // plano em uso (vigente ou agendado) ou no historico de pagamentos nao pode ser excluido: o admin o desativa
     @Override
     @Transactional
     public void delete(long id) {
         // a mensagem vai no detail para aparecer no aviso do front (nao ha campo ligado a exclusao)
-        if (assinaturaRepository.countByPlano(id) > 0) {
+        if (assinaturaRepository.countByPlano(id) > 0 || pagamentoRepository.countByPlano(id) > 0) {
             String mensagem = "Este plano tem assinaturas e não pode ser excluído. Desative-o para não aceitar novas.";
             throw new ValidationException(mensagem, List.of(new Problem.FieldError("ativo", mensagem)));
         }

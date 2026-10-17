@@ -1,63 +1,38 @@
 package br.unitins.tp2.repository;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 import br.unitins.tp2.model.Assinatura;
-import br.unitins.tp2.model.StatusAssinatura;
-import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class AssinaturaRepository implements PanacheRepository<Assinatura> {
 
-    // filtros opcionais: busca (parte do nome do usuario OU do plano) e status; nulo = nao filtra.
-    // As mais recentes primeiro.
-    public PanacheQuery<Assinatura> findByFiltros(String busca, StatusAssinatura status) {
-        List<String> condicoes = new ArrayList<>();
-        Map<String, Object> params = new HashMap<>();
-
-        if (busca != null && !busca.isBlank()) {
-            condicoes.add("(lower(usuario.nome) like lower(:busca) or lower(plano.nome) like lower(:busca))");
-            params.put("busca", "%" + busca.trim() + "%");
-        }
-
-        if (status != null) {
-            condicoes.add("status = :status");
-            params.put("status", status);
-        }
-
-        String where = condicoes.isEmpty() ? "" : String.join(" and ", condicoes) + " ";
-        return find(where + "order by dataInicio desc, id desc", params);
+    // cada usuario tem no maximo uma (RN16)
+    public Assinatura findByUsuario(Long idUsuario) {
+        return find("usuario.id", idUsuario).firstResult();
     }
 
-    // a assinatura ATIVA do usuario, ignorando a que esta sendo editada
-    public Assinatura findAtivaDoUsuarioExceptId(Long idUsuario, Long id) {
-        if (id == null)
-            return find("usuario.id = ?1 and status = ?2", idUsuario, StatusAssinatura.ATIVA).firstResult();
-        return find("usuario.id = ?1 and status = ?2 and id <> ?3", idUsuario, StatusAssinatura.ATIVA, id)
-                .firstResult();
+    // assinaturas de uma pagina da listagem de usuarios, numa consulta so
+    public List<Assinatura> findByUsuarios(List<Long> idsUsuarios) {
+        if (idsUsuarios.isEmpty())
+            return List.of();
+        return list("usuario.id in ?1", idsUsuarios);
     }
 
-    // historico do usuario, da mais recente para a mais antiga (resumo do admin)
-    public List<Assinatura> findByUsuario(Long idUsuario) {
-        return list("usuario.id = ?1 order by dataInicio desc, id desc", idUsuario);
+    // com cobranca vencida ate a data (inclusive): o agendador processa estas
+    public List<Assinatura> findComCobrancaAte(LocalDate data) {
+        return list("dataProximaCobranca <= ?1 order by dataProximaCobranca, id", data);
     }
 
-    // usados para impedir a exclusao de plano/cupom que ja tem assinaturas
+    // usados para impedir a exclusao de plano/cupom em uso (vigente ou agendado)
     public long countByPlano(Long idPlano) {
-        return count("plano.id", idPlano);
+        return count("plano.id = ?1 or proximoPlano.id = ?1", idPlano);
     }
 
     public long countByCupom(Long idCupom) {
-        return count("cupom.id", idCupom);
-    }
-
-    @Override
-    public PanacheQuery<Assinatura> findAll() {
-        return findByFiltros(null, null);
+        return count("cupom.id = ?1 or proximoCupom.id = ?1", idCupom);
     }
 }

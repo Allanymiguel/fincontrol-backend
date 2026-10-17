@@ -10,6 +10,9 @@ public final class AssinaturaResponseMapper {
     }
 
     public static AssinaturaResponseDTO toResponse(Assinatura assinatura) {
+        if (assinatura == null)
+            return null;
+
         Cupom cupom = assinatura.getCupom();
 
         return new AssinaturaResponseDTO(
@@ -19,15 +22,32 @@ public final class AssinaturaResponseMapper {
                 assinatura.getUsuario().getEmail(),
                 assinatura.getPlano().getId(),
                 assinatura.getPlano().getNome(),
+                assinatura.getPeriodicidade(),
                 cupom == null ? null : cupom.getId(),
                 cupom == null ? null : cupom.getCodigo(),
                 cupom == null ? null : cupom.getPercentualDesconto(),
+                assinatura.getFormaPagamento(),
                 assinatura.getStatus(),
                 assinatura.getDataInicio(),
-                assinatura.getDataFim(),
-                assinatura.getPeriodicidade(),
-                assinatura.getValorPago(),
-                assinatura.getFormaPagamento(),
+                assinatura.getValor(),
+                assinatura.getDataInicioPeriodo(),
+                assinatura.getDataProximaCobranca(),
+                toTrocaAgendada(assinatura),
                 assinatura.getObservacao());
+    }
+
+    private static AssinaturaResponseDTO.TrocaAgendada toTrocaAgendada(Assinatura assinatura) {
+        if (!assinatura.isTrocaAgendada())
+            return null;
+
+        Cupom cupom = assinatura.getProximoCupom();
+        return new AssinaturaResponseDTO.TrocaAgendada(
+                assinatura.getProximoPlano().getId(),
+                assinatura.getProximoPlano().getNome(),
+                assinatura.getProximaPeriodicidade(),
+                cupom == null ? null : cupom.getCodigo(),
+                assinatura.getProximaFormaPagamento(),
+                assinatura.getProximoPlano().calcularValor(assinatura.getProximaPeriodicidade(), cupom),
+                assinatura.getDataProximaCobranca());
     }
 }

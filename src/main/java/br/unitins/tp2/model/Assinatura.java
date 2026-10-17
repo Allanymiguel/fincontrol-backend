@@ -9,49 +9,89 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 
-// Assinatura de um Plano por um Usuario. O usuario pode ter varias ao longo do tempo
-// (historico), mas so uma ATIVA por vez.
+// O contrato do Usuario com o FinControl: uma unica assinatura por usuario (RN16).
+// Trocar de plano altera esta mesma assinatura; o historico do que foi cobrado fica em Pagamento.
 @Entity
 public class Assinatura extends DefaultEntity {
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "usuario_id", nullable = false)
+    @OneToOne(optional = false)
+    @JoinColumn(name = "usuario_id", nullable = false, unique = true)
     private Usuario usuario;
 
+    // plano vigente: e ele que libera os limites e modulos (RN14)
     @ManyToOne(optional = false)
     @JoinColumn(name = "plano_id", nullable = false)
     private Plano plano;
 
-    // opcional: cupom de desconto aplicado na contratacao
+    // opcional: cupom aplicado ao plano vigente (vale em todos os ciclos dele)
     @ManyToOne
     @JoinColumn(name = "cupom_id")
     private Cupom cupom;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
-    private StatusAssinatura status;
-
-    @Column(nullable = false)
-    private LocalDate dataInicio;
-
-    // nula = vigente, sem prazo
-    private LocalDate dataFim;
-
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
     private Periodicidade periodicidade;
 
-    // preco do plano na periodicidade escolhida, ja com o desconto do cupom
-    @Column(nullable = false, precision = 14, scale = 2)
-    private BigDecimal valorPago;
-
+    // forma usada nas cobrancas; NENHUMA no plano gratuito
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     private FormaPagamento formaPagamento;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    private StatusAssinatura status;
+
+    // quando o usuario passou a ter a assinatura (cadastro)
+    @Column(nullable = false)
+    private LocalDate dataInicio;
+
+    // preco de cada cobranca do plano vigente, ja com o cupom
+    @Column(nullable = false, precision = 14, scale = 2)
+    private BigDecimal valor;
+
+    // periodo atual: de dataInicioPeriodo ate dataProximaCobranca, coberto por valorPeriodo.
+    // No plano gratuito nao ha cobranca: dataProximaCobranca fica nula.
+    @Column(nullable = false)
+    private LocalDate dataInicioPeriodo;
+
+    private LocalDate dataProximaCobranca;
+
+    // quanto foi pago (ou creditado, numa troca imediata) pelo periodo atual
+    @Column(nullable = false, precision = 14, scale = 2)
+    private BigDecimal valorPeriodo;
+
+    // troca agendada para a proxima cobranca (plano mais barato ou cancelamento); nulos = nada agendado
+    @ManyToOne
+    @JoinColumn(name = "proximo_plano_id")
+    private Plano proximoPlano;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private Periodicidade proximaPeriodicidade;
+
+    @ManyToOne
+    @JoinColumn(name = "proximo_cupom_id")
+    private Cupom proximoCupom;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private FormaPagamento proximaFormaPagamento;
+
     @Column(length = 255)
     private String observacao;
+
+    public boolean isTrocaAgendada() {
+        return proximoPlano != null;
+    }
+
+    public void limparTrocaAgendada() {
+        proximoPlano = null;
+        proximaPeriodicidade = null;
+        proximoCupom = null;
+        proximaFormaPagamento = null;
+    }
 
     public Usuario getUsuario() {
         return usuario;
@@ -77,6 +117,22 @@ public class Assinatura extends DefaultEntity {
         this.cupom = cupom;
     }
 
+    public Periodicidade getPeriodicidade() {
+        return periodicidade;
+    }
+
+    public void setPeriodicidade(Periodicidade periodicidade) {
+        this.periodicidade = periodicidade;
+    }
+
+    public FormaPagamento getFormaPagamento() {
+        return formaPagamento;
+    }
+
+    public void setFormaPagamento(FormaPagamento formaPagamento) {
+        this.formaPagamento = formaPagamento;
+    }
+
     public StatusAssinatura getStatus() {
         return status;
     }
@@ -93,36 +149,68 @@ public class Assinatura extends DefaultEntity {
         this.dataInicio = dataInicio;
     }
 
-    public LocalDate getDataFim() {
-        return dataFim;
+    public BigDecimal getValor() {
+        return valor;
     }
 
-    public void setDataFim(LocalDate dataFim) {
-        this.dataFim = dataFim;
+    public void setValor(BigDecimal valor) {
+        this.valor = valor;
     }
 
-    public Periodicidade getPeriodicidade() {
-        return periodicidade;
+    public LocalDate getDataInicioPeriodo() {
+        return dataInicioPeriodo;
     }
 
-    public void setPeriodicidade(Periodicidade periodicidade) {
-        this.periodicidade = periodicidade;
+    public void setDataInicioPeriodo(LocalDate dataInicioPeriodo) {
+        this.dataInicioPeriodo = dataInicioPeriodo;
     }
 
-    public BigDecimal getValorPago() {
-        return valorPago;
+    public LocalDate getDataProximaCobranca() {
+        return dataProximaCobranca;
     }
 
-    public void setValorPago(BigDecimal valorPago) {
-        this.valorPago = valorPago;
+    public void setDataProximaCobranca(LocalDate dataProximaCobranca) {
+        this.dataProximaCobranca = dataProximaCobranca;
     }
 
-    public FormaPagamento getFormaPagamento() {
-        return formaPagamento;
+    public BigDecimal getValorPeriodo() {
+        return valorPeriodo;
     }
 
-    public void setFormaPagamento(FormaPagamento formaPagamento) {
-        this.formaPagamento = formaPagamento;
+    public void setValorPeriodo(BigDecimal valorPeriodo) {
+        this.valorPeriodo = valorPeriodo;
+    }
+
+    public Plano getProximoPlano() {
+        return proximoPlano;
+    }
+
+    public void setProximoPlano(Plano proximoPlano) {
+        this.proximoPlano = proximoPlano;
+    }
+
+    public Periodicidade getProximaPeriodicidade() {
+        return proximaPeriodicidade;
+    }
+
+    public void setProximaPeriodicidade(Periodicidade proximaPeriodicidade) {
+        this.proximaPeriodicidade = proximaPeriodicidade;
+    }
+
+    public Cupom getProximoCupom() {
+        return proximoCupom;
+    }
+
+    public void setProximoCupom(Cupom proximoCupom) {
+        this.proximoCupom = proximoCupom;
+    }
+
+    public FormaPagamento getProximaFormaPagamento() {
+        return proximaFormaPagamento;
+    }
+
+    public void setProximaFormaPagamento(FormaPagamento proximaFormaPagamento) {
+        this.proximaFormaPagamento = proximaFormaPagamento;
     }
 
     public String getObservacao() {

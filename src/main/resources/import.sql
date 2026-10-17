@@ -1,5 +1,5 @@
 -- Dados de desenvolvimento (recriados a cada subida do back pelo drop-and-create do Hibernate).
--- Ordem respeita as FKs: estado -> municipio -> usuario -> plano/cupom -> categoria/transacao/contato/assinatura.
+-- Ordem respeita as FKs: estado -> municipio -> usuario -> plano/cupom -> categoria/transacao/contato -> assinatura -> pagamento.
 
 -- =========================================================================
 -- estados (municipios sao criados sob demanda pela consulta de CEP)
@@ -74,13 +74,28 @@ insert into contato (usuario_id, nome, tipo, documento, email, telefone, cep, lo
 insert into contato (usuario_id, nome, tipo, documento, email, telefone, cep, logradouro, numero, complemento, bairro, id_municipio) values(2, 'Papelaria Central LTDA', 'FORNECEDOR', '11222333000181', 'contato@papelaria.com', '6332150000', '77001002', 'Praça Girassóis', '100', 'Sala 2', 'Plano Diretor Norte', 1);
 
 -- =========================================================================
--- assinaturas (plano 1 = Essencial, 2 = Empreendedor; cupom 1 = BEMVINDO10).
--- Joao migrou do Essencial mensal para o Empreendedor anual (cupom 10%: 399,00 - 10% = 359,10).
--- Ana teve uma assinatura antes de ter a conta desativada.
+-- assinaturas: uma por usuario (RN16); o historico do que foi cobrado fica em pagamento.
+-- Planos: 1 = Essencial, 2 = Empreendedor, 3 = Gratuito; cupom 1 = BEMVINDO10. O admin nao tem assinatura.
+-- Joao pagou o Essencial mensal de ago/2025 a jan/2026 e passou para o Empreendedor anual
+-- com cupom (399,00 - 10% = 359,10), que vence em 01/02/2027.
+-- Ana pagou o Essencial mensal por seis meses e voltou ao Gratuito antes de ter a conta desativada.
 -- =========================================================================
-insert into assinatura (usuario_id, plano_id, cupom_id, status, dataInicio, dataFim, periodicidade, valorPago, formaPagamento, observacao) values(2, 1, null, 'CANCELADA', '2025-08-01', '2026-01-31', 'MENSAL', 19.90, 'CARTAO', 'Upgrade para o plano Empreendedor');
-insert into assinatura (usuario_id, plano_id, cupom_id, status, dataInicio, dataFim, periodicidade, valorPago, formaPagamento, observacao) values(2, 2, 1, 'ATIVA', '2026-02-01', null, 'ANUAL', 359.10, 'PIX', null);
-insert into assinatura (usuario_id, plano_id, cupom_id, status, dataInicio, dataFim, periodicidade, valorPago, formaPagamento, observacao) values(3, 1, null, 'EXPIRADA', '2025-03-01', '2025-09-01', 'MENSAL', 19.90, 'BOLETO', null);
+insert into assinatura (usuario_id, plano_id, cupom_id, periodicidade, formaPagamento, status, dataInicio, valor, dataInicioPeriodo, dataProximaCobranca, valorPeriodo, observacao) values(2, 2, 1, 'ANUAL', 'PIX', 'ATIVA', '2025-08-01', 359.10, '2026-02-01', '2027-02-01', 359.10, null);
+insert into assinatura (usuario_id, plano_id, cupom_id, periodicidade, formaPagamento, status, dataInicio, valor, dataInicioPeriodo, dataProximaCobranca, valorPeriodo, observacao) values(3, 3, null, 'MENSAL', 'NENHUMA', 'ATIVA', '2025-03-01', 0.00, '2025-09-01', null, 0.00, 'Voltou ao Gratuito em setembro/2025');
+
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 1, 'MENSAL', null, 19.90, 'CARTAO', 'APROVADO', '2025-08-01');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 1, 'MENSAL', null, 19.90, 'CARTAO', 'APROVADO', '2025-09-01');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 1, 'MENSAL', null, 19.90, 'CARTAO', 'APROVADO', '2025-10-01');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 1, 'MENSAL', null, 19.90, 'CARTAO', 'APROVADO', '2025-11-01');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 1, 'MENSAL', null, 19.90, 'CARTAO', 'APROVADO', '2025-12-01');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 1, 'MENSAL', null, 19.90, 'CARTAO', 'APROVADO', '2026-01-01');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 2, 'ANUAL', 1, 359.10, 'PIX', 'APROVADO', '2026-02-01');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(2, 1, 'MENSAL', null, 19.90, 'BOLETO', 'APROVADO', '2025-03-01');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(2, 1, 'MENSAL', null, 19.90, 'BOLETO', 'APROVADO', '2025-04-01');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(2, 1, 'MENSAL', null, 19.90, 'BOLETO', 'APROVADO', '2025-05-01');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(2, 1, 'MENSAL', null, 19.90, 'BOLETO', 'APROVADO', '2025-06-01');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(2, 1, 'MENSAL', null, 19.90, 'BOLETO', 'APROVADO', '2025-07-01');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(2, 1, 'MENSAL', null, 19.90, 'BOLETO', 'APROVADO', '2025-08-01');
 
 -- =========================================================================
 -- catalogos globais (admin): categorias padrao, parametros fiscais, faixas do IRPF.

@@ -1,6 +1,7 @@
 package br.unitins.tp2.model;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,6 +9,11 @@ import jakarta.persistence.Entity;
 // Plano de assinatura do proprio FinControl: preco e os limites/modulos que libera ao usuario (RN14)
 @Entity
 public class Plano extends DefaultEntity {
+
+    // plano que toda conta nova recebe (RN13) e para onde vai quem cancela um plano pago (RN16)
+    public static final String NOME_GRATUITO = "Gratuito";
+
+    private static final BigDecimal CEM = new BigDecimal("100");
 
     @Column(length = 60, nullable = false, unique = true)
     private String nome;
@@ -106,5 +112,15 @@ public class Plano extends DefaultEntity {
 
     public void setAtivo(Boolean ativo) {
         this.ativo = ativo;
+    }
+
+    // preco de uma cobranca na periodicidade, menos o percentual do cupom; arredondado em centavos
+    public BigDecimal calcularValor(Periodicidade periodicidade, Cupom cupom) {
+        BigDecimal preco = periodicidade == Periodicidade.ANUAL ? precoAnual : precoMensal;
+        if (cupom == null)
+            return preco.setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal fatorPago = CEM.subtract(cupom.getPercentualDesconto()).divide(CEM);
+        return preco.multiply(fatorPago).setScale(2, RoundingMode.HALF_UP);
     }
 }

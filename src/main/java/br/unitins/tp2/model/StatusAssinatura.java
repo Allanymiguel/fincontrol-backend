@@ -6,12 +6,11 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum StatusAssinatura {
-    // aguardando pagamento (RN15: pagamento aprovado -> ATIVA)
+    // aguardando pagamento (RN15: pagamento aprovado -> ATIVA). Reservado para um pagamento real:
+    // com a cobranca simulada, toda assinatura fica ATIVA.
     PENDENTE(1L, "Pendente"),
     ATIVA(2L, "Ativa"),
-    CANCELADA(3L, "Cancelada"),
-    SUSPENSA(4L, "Suspensa"),
-    EXPIRADA(5L, "Expirada");
+    CANCELADA(3L, "Cancelada");
 
     private final Long ID;
     private final String NOME;

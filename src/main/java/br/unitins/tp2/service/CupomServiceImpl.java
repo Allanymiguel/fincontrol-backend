@@ -8,6 +8,7 @@ import br.unitins.tp2.exception.Problem;
 import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.model.Cupom;
 import br.unitins.tp2.repository.AssinaturaRepository;
+import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.CupomRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -21,6 +22,9 @@ public class CupomServiceImpl implements CupomService {
 
     @Inject
     AssinaturaRepository assinaturaRepository;
+
+    @Inject
+    PagamentoRepository pagamentoRepository;
 
     @Override
     @Transactional
@@ -43,12 +47,12 @@ public class CupomServiceImpl implements CupomService {
         aplicarDados(edicaoCupom, cupom);
     }
 
-    // cupom ja usado em assinatura nao pode ser excluido (quebraria o historico): o admin o desativa
+    // cupom em uso numa assinatura ou no historico de pagamentos nao pode ser excluido: o admin o desativa
     @Override
     @Transactional
     public void delete(long id) {
         // a mensagem vai no detail para aparecer no aviso do front (nao ha campo ligado a exclusao)
-        if (assinaturaRepository.countByCupom(id) > 0) {
+        if (assinaturaRepository.countByCupom(id) > 0 || pagamentoRepository.countByCupom(id) > 0) {
             String mensagem = "Este cupom já foi usado em assinaturas e não pode ser excluído. Desative-o.";
             throw new ValidationException(mensagem, List.of(new Problem.FieldError("ativo", mensagem)));
         }
