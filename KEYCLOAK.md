@@ -66,6 +66,16 @@ Todas as telas ficam acessíveis sem login. Sem token, as telas operacionais usa
 
 Erros seguem o mesmo formato `Problem` (RFC 7807) do resto da API: 401 para credenciais erradas, conta desativada ou sessão expirada; 403 para quem não tem a role; 503 se o Keycloak estiver fora do ar ou o client estiver mal configurado (o motivo real vai para o log).
 
+## Testar pelo Swagger
+
+O Swagger (`http://localhost:8080/q/swagger-ui`) usa o esquema Bearer (`quarkus.smallrye-openapi.security-scheme=jwt`): o **Authorize** tem um campo só, para o token.
+
+1. Em `POST /auth/login`, "Try it out" com `{"email": "admin@fincontrol.com", "senha": "admin12345"}`.
+2. Copie o `accessToken` da resposta.
+3. Clique em **Authorize** e cole só o token (sem "Bearer"; o Swagger põe sozinho).
+
+O token vale uns 30 minutos; quando a API voltar a responder 401, faça o login de novo.
+
 ## Produção
 
 - Passe o secret por variável de ambiente: `KEYCLOAK_CLIENT_SECRET` (e `KEYCLOAK_URL`, se o Keycloak não estiver em `localhost:8180`).
