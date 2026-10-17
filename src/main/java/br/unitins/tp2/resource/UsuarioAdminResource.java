@@ -11,6 +11,8 @@ import br.unitins.tp2.dto.CadastroCompletoDTO;
 import br.unitins.tp2.dto.CadastroSimplesDTO;
 import br.unitins.tp2.dto.PageResponse;
 import br.unitins.tp2.dto.UsuarioResponseDTO;
+import br.unitins.tp2.dto.UsuarioEdicaoCompletaDTO;
+import br.unitins.tp2.dto.UsuarioEdicaoSimplesDTO;
 import br.unitins.tp2.dto.UsuarioResumoResponseDTO;
 import br.unitins.tp2.mapper.UsuarioResponseMapper;
 import br.unitins.tp2.exception.ValidationException;
@@ -26,6 +28,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -88,6 +91,20 @@ public class UsuarioAdminResource {
     @Path("/{id}")
     public UsuarioResponseDTO buscarPorId(@PathParam("id") Long id) {
         return comAssinatura(service.findById(id));
+    }
+
+    // edicao de um cadastro simples: so nome e e-mail (recusada se o cadastro ja for completo)
+    @PUT
+    @Path("/{id}/simples")
+    public UsuarioResponseDTO editarSimples(@PathParam("id") Long id, UsuarioEdicaoSimplesDTO dto) {
+        return comAssinatura(service.editarSimples(id, dto));
+    }
+
+    // completa um cadastro simples ou atualiza um completo; papel e senha nao mudam aqui
+    @PUT
+    @Path("/{id}/completo")
+    public UsuarioResponseDTO editarCompleto(@PathParam("id") Long id, UsuarioEdicaoCompletaDTO dto) {
+        return comAssinatura(service.editarCompleto(id, dto));
     }
 
     // resumo nao invasivo: perfil, assinaturas e contagens (sem o conteudo dos registros pessoais)

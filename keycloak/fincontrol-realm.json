@@ -5,6 +5,7 @@
   "sslRequired": "none",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
+  "editUsernameAllowed": true,
   "duplicateEmailsAllowed": false,
   "accessTokenLifespan": 1800,
   "ssoSessionIdleTimeout": 28800,
