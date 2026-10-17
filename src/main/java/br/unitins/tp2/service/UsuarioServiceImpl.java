@@ -1,14 +1,26 @@
 package br.unitins.tp2.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import br.unitins.tp2.dto.RegistroRequestDTO;
 import br.unitins.tp2.exception.ResourceNotFoundException;
 import br.unitins.tp2.exception.ValidationException;
+import br.unitins.tp2.model.Assinatura;
 import br.unitins.tp2.model.AtividadeMei;
+import br.unitins.tp2.model.Categoria;
+import br.unitins.tp2.model.CategoriaPadrao;
+import br.unitins.tp2.model.FormaPagamento;
 import br.unitins.tp2.model.Papel;
+import br.unitins.tp2.model.Periodicidade;
 import br.unitins.tp2.model.PerfilFiscal;
+import br.unitins.tp2.model.Plano;
+import br.unitins.tp2.model.StatusAssinatura;
 import br.unitins.tp2.model.Usuario;
+import br.unitins.tp2.repository.AssinaturaRepository;
+import br.unitins.tp2.repository.CategoriaPadraoRepository;
+import br.unitins.tp2.repository.CategoriaRepository;
+import br.unitins.tp2.repository.PlanoRepository;
 import br.unitins.tp2.repository.UsuarioRepository;
 import br.unitins.tp2.util.DocumentoUtil;
 import io.quarkus.narayana.jta.QuarkusTransaction;
@@ -18,16 +30,32 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class UsuarioServiceImpl implements UsuarioService {
 
+    // nome do plano aplicado no cadastro (RN13). Precisa existir no banco (seed ou cadastrado pelo admin).
+    private static final String NOME_PLANO_GRATUITO = "Gratuito";
+
     @Inject
     UsuarioRepository usuarioRepository;
 
     @Inject
     KeycloakAdminService keycloakAdminService;
 
+    @Inject
+    CategoriaPadraoRepository categoriaPadraoRepository;
+
+    @Inject
+    CategoriaRepository categoriaRepository;
+
+    @Inject
+    PlanoRepository planoRepository;
+
+    @Inject
+    AssinaturaRepository assinaturaRepository;
+
     // Cria a conta no Keycloak (login e senha) e depois o perfil local, ligado pelo keycloakId.
     // Nao ha transacao entre os dois: se o perfil local falhar, o usuario do Keycloak e excluido.
-    // TODO (RN13): copiar as CategoriaPadrao nao arquivadas e criar a Assinatura no plano gratuito,
-    // quando Categoria tiver dono (RN12) e a Assinatura existir.
+    // RN13: toda conta nova recebe uma copia das CategoriaPadrao nao arquivadas e uma Assinatura
+    // ATIVA no plano Gratuito. A copia e feita UMA UNICA VEZ aqui; mudancas futuras em
+    // CategoriaPadrao nao afetam este usuario (nem reinserem o que ele apagar).
     @Override
     public Usuario registrar(RegistroRequestDTO registro) {
         String email = registro.email().trim().toLowerCase();
@@ -52,12 +80,53 @@ public class UsuarioServiceImpl implements UsuarioService {
                 usuario.setAtivo(true);
 
                 usuarioRepository.persist(usuario);
+
+                copiarCategoriasPadrao(usuario);
+                criarAssinaturaGratuita(usuario);
+
                 return usuario;
             });
         } catch (RuntimeException e) {
             keycloakAdminService.excluirUsuario(keycloakId);
             throw e;
         }
+    }
+
+    // snapshot das CategoriaPadrao nao arquivadas: cada uma vira uma Categoria do novo usuario,
+    // independente dali para frente (editar/arquivar o padrao nao mexe mais nesta copia)
+    private void copiarCategoriasPadrao(Usuario novoUsuario) {
+        List<CategoriaPadrao> padroes = categoriaPadraoRepository.listNaoArquivadas();
+        for (CategoriaPadrao padrao : padroes) {
+            Categoria categoria = new Categoria();
+            categoria.setUsuario(novoUsuario);
+            categoria.setNome(padrao.getNome());
+            categoria.setTipo(padrao.getTipo());
+            categoria.setCor(padrao.getCor());
+            categoria.setAtiva(true);
+            categoriaRepository.persist(categoria);
+        }
+    }
+
+    // Assinatura ATIVA no plano Gratuito. Sem o plano configurado, o cadastro falha
+    // e o usuario do Keycloak e desfeito (pelo catch do registrar).
+    private void criarAssinaturaGratuita(Usuario novoUsuario) {
+        Plano gratuito = planoRepository.findByNomeExato(NOME_PLANO_GRATUITO);
+        if (gratuito == null)
+            throw ValidationException.of("idPlano",
+                    "Plano \"" + NOME_PLANO_GRATUITO + "\" não encontrado. Configure-o antes de aceitar cadastros.");
+
+        Assinatura assinatura = new Assinatura();
+        assinatura.setUsuario(novoUsuario);
+        assinatura.setPlano(gratuito);
+        assinatura.setCupom(null);
+        assinatura.setStatus(StatusAssinatura.ATIVA);
+        assinatura.setDataInicio(LocalDate.now());
+        assinatura.setDataFim(null);
+        assinatura.setPeriodicidade(Periodicidade.MENSAL);
+        assinatura.setValorPago(gratuito.getPrecoMensal());
+        assinatura.setFormaPagamento(FormaPagamento.NENHUMA);
+        assinatura.setObservacao("Plano gratuito aplicado no cadastro");
+        assinaturaRepository.persist(assinatura);
     }
 
     // Ativa se estiver inativo e desativa se estiver ativo, no Keycloak (desativado nao loga)

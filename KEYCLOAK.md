@@ -69,7 +69,8 @@ Erros seguem o mesmo formato `Problem` (RFC 7807) do resto da API: 401 para cred
 - Gere um secret novo para o client e troque a senha do admin do Keycloak; os valores do realm de desenvolvimento são públicos.
 - Exija HTTPS no realm (`sslRequired`) e rode o Keycloak com `start` em vez de `start-dev`.
 
-## Pendências
+## Regras implementadas
 
-- **RN12 (isolamento):** `Transacao`, `Categoria` e `Contato` ainda não têm vínculo com `Usuario`, então qualquer `USER` logado vê todos os registros. Os resources têm um `TODO (RN12)`.
-- **RN13:** no cadastro, copiar as categorias padrão e criar a assinatura no plano gratuito (TODO em `UsuarioServiceImpl.registrar`).
+- **RN12 (isolamento por usuário):** `Transacao`, `Categoria` e `Contato` têm o campo `usuario`. Cada `USER` vê somente seus próprios registros; tentar acessar o id de outro usuário responde 404 (sem vazar existência). `UsuarioLogadoService` resolve o usuário atual a partir do `sub` do JWT.
+- **RN13 (defaults no cadastro):** `POST /auth/registro` copia as `CategoriaPadrao` não arquivadas para o novo usuário e cria uma `Assinatura` ATIVA no plano **Gratuito** (precisa existir no banco; o seed já traz). A cópia é feita **uma única vez**, no momento do cadastro.
+  - Alterações posteriores em `CategoriaPadrao` (adicionar, editar, arquivar) **só afetam cadastros feitos a partir daquele momento**. Usuários existentes mantêm as próprias categorias — o controle delas pertence a cada usuário.

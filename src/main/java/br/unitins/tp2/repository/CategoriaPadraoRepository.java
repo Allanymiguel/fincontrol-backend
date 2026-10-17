@@ -34,6 +34,12 @@ public class CategoriaPadraoRepository implements PanacheRepository<CategoriaPad
         return find(where + "order by arquivada, tipo, nome", params);
     }
 
+    // usada no cadastro (RN13) para copiar as categorias padrao para a conta nova.
+    // Apenas as nao arquivadas vao: adicionar/arquivar aqui so afeta cadastros futuros.
+    public java.util.List<CategoriaPadrao> listNaoArquivadas() {
+        return list("arquivada = false order by tipo, nome");
+    }
+
     // usado no create/update: procura o mesmo nome + tipo em OUTRA categoria padrao
     public CategoriaPadrao findByNomeAndTipoExceptId(String nome, TipoTransacao tipo, Long id) {
         if (id == null)
