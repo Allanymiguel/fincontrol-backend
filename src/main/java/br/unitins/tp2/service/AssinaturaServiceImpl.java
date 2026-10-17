@@ -42,6 +42,9 @@ public class AssinaturaServiceImpl implements AssinaturaService {
     CupomRepository cupomRepository;
 
     // Nova assinatura comeca ATIVA hoje, sem data de fim. O valor pago e calculado aqui.
+    // Se o usuario ja tem uma ATIVA (ex.: o Gratuito do cadastro), ela e encerrada como CANCELADA
+    // hoje, na mesma transacao: assim o upgrade/troca de plano e um passo so e continua havendo
+    // uma unica ATIVA por usuario. Todas as validacoes vem antes, para nada mudar se falhar.
     @Override
     @Transactional
     public Assinatura create(AssinaturaRequestDTO dto) {
@@ -51,13 +54,19 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         Periodicidade periodicidade = buscarPeriodicidadeOuFalhar(dto.idPeriodicidade());
         FormaPagamento formaPagamento = buscarFormaPagamentoOuFalhar(dto.idFormaPagamento());
 
-        validarUnicaAtiva(usuario.getId(), null);
+        Assinatura anterior = assinaturaRepository.findAtivaDoUsuarioExceptId(usuario.getId(), null);
+        if (anterior != null && anterior.getPlano().getId().equals(plano.getId())
+                && anterior.getPeriodicidade() == periodicidade)
+            throw ValidationException.of("idPlano", "O usuário já tem este plano ativo nessa periodicidade.");
 
         // "Nenhuma" so vale para assinatura sem custo (plano Gratuito ou cupom de 100%)
         BigDecimal valorPago = calcularValorPago(plano, periodicidade, cupom);
         if (formaPagamento == FormaPagamento.NENHUMA && valorPago.signum() > 0)
             throw ValidationException.of("idFormaPagamento",
                     "A forma de pagamento \"Nenhuma\" só vale para assinaturas sem custo.");
+
+        if (anterior != null)
+            substituir(anterior, plano, periodicidade);
 
         Assinatura nova = new Assinatura();
         nova.setUsuario(usuario);
@@ -110,13 +119,34 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         if (assinatura.getStatus() == StatusAssinatura.CANCELADA)
             throw ValidationException.of("status", "A assinatura já está cancelada.");
 
-        LocalDate hoje = LocalDate.now();
         assinatura.setStatus(StatusAssinatura.CANCELADA);
-        // termina hoje (ou antes, se ja tinha um fim anterior)
-        if (assinatura.getDataFim() == null || assinatura.getDataFim().isAfter(hoje))
-            assinatura.setDataFim(hoje.isBefore(assinatura.getDataInicio()) ? assinatura.getDataInicio() : hoje);
+        encerrarHoje(assinatura);
 
         return assinatura;
+    }
+
+    // encerra a assinatura ativa que esta sendo trocada por outra, registrando o motivo
+    private void substituir(Assinatura anterior, Plano novoPlano, Periodicidade periodicidade) {
+        anterior.setStatus(StatusAssinatura.CANCELADA);
+        encerrarHoje(anterior);
+        anterior.setObservacao(anexarObservacao(anterior.getObservacao(),
+                "Substituída pelo plano " + novoPlano.getNome() + " (" + periodicidade.getNome().toLowerCase() + ")"));
+    }
+
+    // termina hoje (ou antes, se ja tinha um fim anterior)
+    private void encerrarHoje(Assinatura assinatura) {
+        LocalDate hoje = LocalDate.now();
+        if (assinatura.getDataFim() == null || assinatura.getDataFim().isAfter(hoje))
+            assinatura.setDataFim(hoje.isBefore(assinatura.getDataInicio()) ? assinatura.getDataInicio() : hoje);
+    }
+
+    // mantem a observacao do admin e acrescenta a nota, sem passar do limite da coluna
+    private String anexarObservacao(String atual, String nota) {
+        if (atual == null || atual.isBlank())
+            return nota;
+
+        String junta = atual + " | " + nota;
+        return junta.length() <= 255 ? junta : atual;
     }
 
     @Override
@@ -144,7 +174,8 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         return preco.multiply(fatorPago).setScale(2, RoundingMode.HALF_UP);
     }
 
-    // RN: o usuario pode ter varias assinaturas, mas so uma ATIVA por vez
+    // RN: o usuario pode ter varias assinaturas, mas so uma ATIVA por vez.
+    // Usada ao reativar uma antiga (PUT); na criacao a ativa anterior e substituida.
     private void validarUnicaAtiva(Long idUsuario, Long idAssinatura) {
         if (assinaturaRepository.findAtivaDoUsuarioExceptId(idUsuario, idAssinatura) != null)
             throw ValidationException.of("idUsuario",
