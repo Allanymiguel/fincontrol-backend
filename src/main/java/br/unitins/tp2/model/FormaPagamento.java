@@ -8,7 +8,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 public enum FormaPagamento {
     PIX(1L, "Pix"),
     CARTAO(2L, "Cartão"),
-    BOLETO(3L, "Boleto");
+    BOLETO(3L, "Boleto"),
+    // usado nas assinaturas do plano gratuito, onde nao ha pagamento
+    NENHUMA(4L, "Nenhuma");
 
     private final Long ID;
     private final String NOME;

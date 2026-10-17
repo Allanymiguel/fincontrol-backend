@@ -50,7 +50,7 @@ insert into usuario (keycloakId, nome, email, documento, telefone, perfilFiscal,
 -- =========================================================================
 insert into plano (nome, precoMensal, precoAnual, limiteTransacoes, limiteMetas, liberaRecorrencias, liberaFiscal, liberaExportacao, ativo) values('Essencial', 19.90, 199.00, 1000, 10, true, false, true, true);
 insert into plano (nome, precoMensal, precoAnual, limiteTransacoes, limiteMetas, liberaRecorrencias, liberaFiscal, liberaExportacao, ativo) values('Empreendedor', 39.90, 399.00, 10000, 50, true, true, true, true);
-insert into plano (nome, precoMensal, precoAnual, limiteTransacoes, limiteMetas, liberaRecorrencias, liberaFiscal, liberaExportacao, ativo) values('Legado 2025', 14.90, 149.00, 500, 5, false, false, false, false);
+insert into plano (nome, precoMensal, precoAnual, limiteTransacoes, limiteMetas, liberaRecorrencias, liberaFiscal, liberaExportacao, ativo) values('Gratuito', 0.00, 0.00, 50, 1, false, false, false, true);
 
 insert into cupom (codigo, percentualDesconto, validade, ativo) values('BEMVINDO10', 10.00, '2026-12-31', true);
 insert into cupom (codigo, percentualDesconto, validade, ativo) values('BLACKFRIDAY', 30.00, '2026-11-30', true);
