@@ -14,8 +14,7 @@ public interface UsuarioService {
     Usuario alternarAtivo(long id, String keycloakIdDoAdmin);
     Usuario findById(long id);
     UsuarioResumoResponseDTO buscarResumo(long id);
-    List<Usuario> findAll(int page, int pageSize);
-    List<Usuario> findByNomeOuEmail(String busca, int page, int pageSize);
-    long count();
-    long count(String busca);
+    // busca = parte do nome ou do email; idPlano = plano vigente da assinatura (ambos opcionais)
+    List<Usuario> findByFiltros(String busca, Long idPlano, int page, int pageSize);
+    long count(String busca, Long idPlano);
 }

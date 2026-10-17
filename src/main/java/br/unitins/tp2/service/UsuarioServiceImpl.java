@@ -170,23 +170,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    public List<Usuario> findAll(int page, int pageSize) {
-        return usuarioRepository.findAll().page(page, pageSize).list();
+    public List<Usuario> findByFiltros(String busca, Long idPlano, int page, int pageSize) {
+        return usuarioRepository.findByFiltros(busca, idPlano).page(page, pageSize).list();
     }
 
     @Override
-    public List<Usuario> findByNomeOuEmail(String busca, int page, int pageSize) {
-        return usuarioRepository.findByNomeOuEmail(busca).page(page, pageSize).list();
-    }
-
-    @Override
-    public long count() {
-        return usuarioRepository.findAll().count();
-    }
-
-    @Override
-    public long count(String busca) {
-        return usuarioRepository.findByNomeOuEmail(busca).count();
+    public long count(String busca, Long idPlano) {
+        return usuarioRepository.findByFiltros(busca, idPlano).count();
     }
 
     // Regras que a Bean Validation (anotacoes do DTO) nao consegue checar sozinha.

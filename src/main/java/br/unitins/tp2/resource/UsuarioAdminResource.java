@@ -1,6 +1,9 @@
 package br.unitins.tp2.resource;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
@@ -8,7 +11,9 @@ import br.unitins.tp2.dto.PageResponse;
 import br.unitins.tp2.dto.UsuarioResponseDTO;
 import br.unitins.tp2.dto.UsuarioResumoResponseDTO;
 import br.unitins.tp2.mapper.UsuarioResponseMapper;
+import br.unitins.tp2.model.Assinatura;
 import br.unitins.tp2.model.Usuario;
+import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.service.UsuarioService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -32,28 +37,35 @@ public class UsuarioAdminResource {
     UsuarioService service;
 
     @Inject
+    AssinaturaRepository assinaturaRepository;
+
+    @Inject
     JsonWebToken jwt;
 
-    // busca = parte do nome ou do email
+    // busca = parte do nome ou do email; idPlano = plano vigente da assinatura. Cada linha traz o
+    // resumo da assinatura (as da pagina vem numa consulta so).
     @GET
     public PageResponse<UsuarioResponseDTO> buscarTodos(
             @QueryParam("busca") String busca,
+            @QueryParam("idPlano") Long idPlano,
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("pageSize") @DefaultValue("10") int pageSize) {
 
-        boolean hasBusca = busca != null && !busca.isBlank();
+        List<Usuario> usuarios = service.findByFiltros(busca, idPlano, page, pageSize);
+        long totalItems = service.count(busca, idPlano);
 
-        List<Usuario> usuarios = hasBusca ? service.findByNomeOuEmail(busca.trim(), page, pageSize)
-                : service.findAll(page, pageSize);
-        long totalItems = hasBusca ? service.count(busca.trim()) : service.count();
+        Map<Long, Assinatura> assinaturas = assinaturaRepository
+                .findByUsuarios(usuarios.stream().map(Usuario::getId).toList()).stream()
+                .collect(Collectors.toMap(a -> a.getUsuario().getId(), Function.identity()));
 
-        return PageResponse.of(usuarios, page, pageSize, totalItems, UsuarioResponseMapper::toResponse);
+        return PageResponse.of(usuarios, page, pageSize, totalItems,
+                u -> UsuarioResponseMapper.toResponse(u, assinaturas.get(u.getId())));
     }
 
     @GET
     @Path("/{id}")
     public UsuarioResponseDTO buscarPorId(@PathParam("id") Long id) {
-        return UsuarioResponseMapper.toResponse(service.findById(id));
+        return comAssinatura(service.findById(id));
     }
 
     // resumo nao invasivo: perfil, assinaturas e contagens (sem o conteudo dos registros pessoais)
@@ -68,6 +80,10 @@ public class UsuarioAdminResource {
     @PATCH
     @Path("/{id}/ativar")
     public UsuarioResponseDTO alternarAtivo(@PathParam("id") Long id) {
-        return UsuarioResponseMapper.toResponse(service.alternarAtivo(id, jwt.getSubject()));
+        return comAssinatura(service.alternarAtivo(id, jwt.getSubject()));
+    }
+
+    private UsuarioResponseDTO comAssinatura(Usuario usuario) {
+        return UsuarioResponseMapper.toResponse(usuario, assinaturaRepository.findByUsuario(usuario.getId()));
     }
 }

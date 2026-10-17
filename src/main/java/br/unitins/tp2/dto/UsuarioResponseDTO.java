@@ -15,6 +15,8 @@ public record UsuarioResponseDTO(
     AtividadeMei atividadeMei,
     Papel papel,
     Boolean ativo,
-    EnderecoResponseDTO endereco
+    EnderecoResponseDTO endereco,
+    // so na listagem/consulta do admin; null quando nao se aplica (ou o usuario nao tem assinatura)
+    AssinaturaResumoDTO assinatura
 ) {
 }
