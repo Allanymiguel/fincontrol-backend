@@ -77,6 +77,11 @@
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- cobranca diaria das assinaturas -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-scheduler</artifactId>
+        </dependency>
         <!-- autenticacao via Keycloak: ele emite o JWT, o quarkus-oidc so valida -->
         <dependency>
             <groupId>io.quarkus</groupId>
