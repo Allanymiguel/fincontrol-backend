@@ -74,5 +74,10 @@ Erros seguem o mesmo formato `Problem` (RFC 7807) do resto da API: 401 para cred
 ## Regras implementadas
 
 - **RN12 (isolamento por usuário):** `Transacao`, `Categoria` e `Contato` têm o campo `usuario`. Cada `USER` vê somente seus próprios registros; tentar acessar o id de outro usuário responde 404 (sem vazar existência). `UsuarioLogadoService` resolve o usuário atual a partir do `sub` do JWT.
-- **RN13 (defaults no cadastro):** `POST /auth/registro` copia as `CategoriaPadrao` não arquivadas para o novo usuário e cria uma `Assinatura` ATIVA no plano **Gratuito** (precisa existir no banco; o seed já traz). A cópia é feita **uma única vez**, no momento do cadastro.
+- **RN13 (defaults no cadastro):** `POST /auth/registro` copia as `CategoriaPadrao` não arquivadas para o novo usuário e cria a `Assinatura` do usuário no plano **Gratuito** (precisa existir no banco; o seed já traz). A cópia é feita **uma única vez**, no momento do cadastro.
   - Alterações posteriores em `CategoriaPadrao` (adicionar, editar, arquivar) **só afetam cadastros feitos a partir daquele momento**. Usuários existentes mantêm as próprias categorias — o controle delas pertence a cada usuário.
+- **RN16 (assinatura única e troca de plano):** cada usuário tem **uma** `Assinatura` (o admin não tem). Trocar de plano altera essa mesma assinatura; o histórico do que foi cobrado fica em `Pagamento`. As trocas seguem a lógica da Netflix e são feitas pelo admin em `/admin/usuarios/{id}/assinatura`:
+  - **Plano mais caro** (preço por dia maior, já com o cupom): vale **na hora**, sem cobrança. O saldo não usado do período atual vira dias do plano novo, então a próxima cobrança fica mais cedo. Saindo do Gratuito não há saldo: o primeiro ciclo é cobrado na hora.
+  - **Plano mais barato:** fica **agendado** para a próxima cobrança; os recursos atuais continuam até lá. Uma nova troca antes da cobrança substitui a agendada, e escolher de novo o plano vigente desfaz o agendamento.
+  - **Cancelar o plano pago** = voltar ao Gratuito na próxima cobrança (ninguém fica sem assinatura).
+  - **Cobrança:** um agendador diário (`fincontrol.cobranca.cron`) aplica as trocas agendadas e registra um `Pagamento` APROVADO (pagamento simulado, RN15) para cada cobrança vencida. Conta desativada não é cobrada: volta ao Gratuito na data da cobrança.
