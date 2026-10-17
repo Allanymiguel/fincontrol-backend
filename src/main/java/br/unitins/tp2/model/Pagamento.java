@@ -5,8 +5,6 @@ import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
@@ -24,8 +22,7 @@ public class Pagamento extends DefaultEntity {
     @JoinColumn(name = "plano_id", nullable = false)
     private Plano plano;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
+    @Column(nullable = false)
     private Periodicidade periodicidade;
 
     @ManyToOne
@@ -35,12 +32,10 @@ public class Pagamento extends DefaultEntity {
     @Column(nullable = false, precision = 14, scale = 2)
     private BigDecimal valor;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
+    @Column(nullable = false)
     private FormaPagamento formaPagamento;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
+    @Column(nullable = false)
     private StatusPagamento status;
 
     @Column(nullable = false)

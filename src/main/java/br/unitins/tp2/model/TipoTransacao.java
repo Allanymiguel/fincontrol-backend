@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum TipoTransacao {
+public enum TipoTransacao implements EnumComId {
     RECEITA(1L, "Receita"),
     DESPESA(2L, "Despesa");
 
@@ -17,6 +17,7 @@ public enum TipoTransacao {
         this.NOME = nome;
     }
 
+    @Override
     public Long getId() {
         return ID;
     }

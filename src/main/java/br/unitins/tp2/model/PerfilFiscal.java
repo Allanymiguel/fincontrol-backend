@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum PerfilFiscal {
+public enum PerfilFiscal implements EnumComId {
     PF(1L, "Pessoa Física"),
     MEI(2L, "Microempreendedor Individual"),
     ME(3L, "Microempresa");
@@ -18,6 +18,7 @@ public enum PerfilFiscal {
         this.NOME = nome;
     }
 
+    @Override
     public Long getId() {
         return ID;
     }

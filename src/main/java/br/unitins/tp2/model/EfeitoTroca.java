@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 
 // O que acontece com a assinatura numa troca de plano (RN16, no estilo da Netflix)
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum EfeitoTroca {
+public enum EfeitoTroca implements EnumComId {
     // plano mais caro (ou saindo do Gratuito): vale na hora
     IMEDIATO(1L, "Imediata"),
     // plano mais barato ou cancelamento: vale na proxima cobranca
@@ -20,6 +20,7 @@ public enum EfeitoTroca {
         this.NOME = nome;
     }
 
+    @Override
     public Long getId() {
         return ID;
     }

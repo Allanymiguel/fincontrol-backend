@@ -5,8 +5,6 @@ import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -30,17 +28,14 @@ public class Assinatura extends DefaultEntity {
     @JoinColumn(name = "cupom_id")
     private Cupom cupom;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
+    @Column(nullable = false)
     private Periodicidade periodicidade;
 
     // forma usada nas cobrancas; NENHUMA no plano gratuito
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
+    @Column(nullable = false)
     private FormaPagamento formaPagamento;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
+    @Column(nullable = false)
     private StatusAssinatura status;
 
     // quando o usuario passou a ter a assinatura (cadastro)
@@ -67,16 +62,12 @@ public class Assinatura extends DefaultEntity {
     @JoinColumn(name = "proximo_plano_id")
     private Plano proximoPlano;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
     private Periodicidade proximaPeriodicidade;
 
     @ManyToOne
     @JoinColumn(name = "proximo_cupom_id")
     private Cupom proximoCupom;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
     private FormaPagamento proximaFormaPagamento;
 
     @Column(length = 255)

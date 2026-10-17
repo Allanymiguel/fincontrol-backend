@@ -2,8 +2,6 @@ package br.unitins.tp2.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
@@ -18,8 +16,7 @@ public class Categoria extends DefaultEntity {
     @Column(length = 60, nullable = false)
     private String nome;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
+    @Column(nullable = false)
     private TipoTransacao tipo;
 
     @Column(length = 7)

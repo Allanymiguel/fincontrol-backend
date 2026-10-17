@@ -5,8 +5,6 @@ import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 
 // Dono dos dados do sistema. O login e a senha ficam no Keycloak; aqui ficam o perfil
@@ -36,17 +34,12 @@ public class Usuario extends DefaultEntity {
     private String telefone;
 
     // nulo no cadastro simples (so nome, e-mail e senha)
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
     private PerfilFiscal perfilFiscal;
 
     // obrigatoria so quando perfilFiscal = MEI
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
     private AtividadeMei atividadeMei;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
+    @Column(nullable = false)
     private Papel papel;
 
     @Column(nullable = false)

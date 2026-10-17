@@ -6,7 +6,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum Periodicidade {
+public enum Periodicidade implements EnumComId {
     MENSAL(1L, "Mensal"),
     ANUAL(2L, "Anual");
 
@@ -18,6 +18,7 @@ public enum Periodicidade {
         this.NOME = nome;
     }
 
+    @Override
     public Long getId() {
         return ID;
     }

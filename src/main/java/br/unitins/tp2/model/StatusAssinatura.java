@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum StatusAssinatura {
+public enum StatusAssinatura implements EnumComId {
     // aguardando pagamento (RN15: pagamento aprovado -> ATIVA). Reservado para um pagamento real:
     // com a cobranca simulada, toda assinatura fica ATIVA.
     PENDENTE(1L, "Pendente"),
@@ -20,6 +20,7 @@ public enum StatusAssinatura {
         this.NOME = nome;
     }
 
+    @Override
     public Long getId() {
         return ID;
     }

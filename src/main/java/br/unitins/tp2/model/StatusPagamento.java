@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum StatusPagamento {
+public enum StatusPagamento implements EnumComId {
     PENDENTE(1L, "Pendente"),
     APROVADO(2L, "Aprovado"),
     RECUSADO(3L, "Recusado");
@@ -18,6 +18,7 @@ public enum StatusPagamento {
         this.NOME = nome;
     }
 
+    @Override
     public Long getId() {
         return ID;
     }

@@ -3,8 +3,6 @@ package br.unitins.tp2.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
@@ -20,8 +18,7 @@ public class Contato extends DefaultEntity {
     @Column(length = 120, nullable = false)
     private String nome;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
+    @Column(nullable = false)
     private TipoContato tipo;
 
     // CPF (11 digitos) ou CNPJ (14 digitos), salvo somente com numeros
