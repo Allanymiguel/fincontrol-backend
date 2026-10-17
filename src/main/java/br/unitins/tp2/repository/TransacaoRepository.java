@@ -1,5 +1,7 @@
 package br.unitins.tp2.repository;
 
+import java.time.LocalDate;
+
 import br.unitins.tp2.model.Transacao;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
@@ -38,5 +40,13 @@ public class TransacaoRepository implements PanacheRepository<Transacao> {
 
     public long countByUsuario(Long idUsuario) {
         return count("usuario.id = ?1", idUsuario);
+    }
+
+    // data da transacao mais recente do usuario (resumo do admin); null se nao tiver nenhuma
+    public LocalDate findUltimaDataByUsuario(Long idUsuario) {
+        return getEntityManager()
+                .createQuery("select max(t.data) from Transacao t where t.usuario.id = :idUsuario", LocalDate.class)
+                .setParameter("idUsuario", idUsuario)
+                .getSingleResult();
     }
 }

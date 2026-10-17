@@ -3,9 +3,13 @@ package br.unitins.tp2.service;
 import java.time.LocalDate;
 import java.util.List;
 
+import br.unitins.tp2.dto.AssinaturaResponseDTO;
 import br.unitins.tp2.dto.RegistroRequestDTO;
+import br.unitins.tp2.dto.UsuarioResumoResponseDTO;
 import br.unitins.tp2.exception.ResourceNotFoundException;
 import br.unitins.tp2.exception.ValidationException;
+import br.unitins.tp2.mapper.AssinaturaResponseMapper;
+import br.unitins.tp2.mapper.UsuarioResponseMapper;
 import br.unitins.tp2.model.Assinatura;
 import br.unitins.tp2.model.AtividadeMei;
 import br.unitins.tp2.model.Categoria;
@@ -20,7 +24,9 @@ import br.unitins.tp2.model.Usuario;
 import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.repository.CategoriaPadraoRepository;
 import br.unitins.tp2.repository.CategoriaRepository;
+import br.unitins.tp2.repository.ContatoRepository;
 import br.unitins.tp2.repository.PlanoRepository;
+import br.unitins.tp2.repository.TransacaoRepository;
 import br.unitins.tp2.repository.UsuarioRepository;
 import br.unitins.tp2.util.DocumentoUtil;
 import io.quarkus.narayana.jta.QuarkusTransaction;
@@ -50,6 +56,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Inject
     AssinaturaRepository assinaturaRepository;
+
+    @Inject
+    TransacaoRepository transacaoRepository;
+
+    @Inject
+    ContatoRepository contatoRepository;
 
     // Cria a conta no Keycloak (login e senha) e depois o perfil local, ligado pelo keycloakId.
     // Nao ha transacao entre os dois: se o perfil local falhar, o usuario do Keycloak e excluido.
@@ -160,6 +172,33 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public Usuario findById(long id) {
         return buscarUsuarioOuFalhar(id);
+    }
+
+    // Visao nao invasiva para o admin: perfil, assinaturas e so as QUANTIDADES dos
+    // registros operacionais. O conteudo (valores, nomes, documentos) nunca sai daqui.
+    @Override
+    public UsuarioResumoResponseDTO buscarResumo(long id) {
+        Usuario usuario = buscarUsuarioOuFalhar(id);
+
+        List<AssinaturaResponseDTO> assinaturas = assinaturaRepository.findByUsuario(usuario.getId()).stream()
+                .map(AssinaturaResponseMapper::toResponse)
+                .toList();
+        AssinaturaResponseDTO atual = assinaturas.stream()
+                .filter(a -> a.status() == StatusAssinatura.ATIVA)
+                .findFirst()
+                .orElse(null);
+
+        var contagens = new UsuarioResumoResponseDTO.Contagens(
+                transacaoRepository.countByUsuario(usuario.getId()),
+                categoriaRepository.countByUsuario(usuario.getId()),
+                contatoRepository.countByUsuario(usuario.getId()));
+
+        return new UsuarioResumoResponseDTO(
+                UsuarioResponseMapper.toResponse(usuario),
+                atual,
+                assinaturas,
+                contagens,
+                transacaoRepository.findUltimaDataByUsuario(usuario.getId()));
     }
 
     @Override

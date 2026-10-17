@@ -42,6 +42,11 @@ public class AssinaturaRepository implements PanacheRepository<Assinatura> {
                 .firstResult();
     }
 
+    // historico do usuario, da mais recente para a mais antiga (resumo do admin)
+    public List<Assinatura> findByUsuario(Long idUsuario) {
+        return list("usuario.id = ?1 order by dataInicio desc, id desc", idUsuario);
+    }
+
     // usados para impedir a exclusao de plano/cupom que ja tem assinaturas
     public long countByPlano(Long idPlano) {
         return count("plano.id", idPlano);

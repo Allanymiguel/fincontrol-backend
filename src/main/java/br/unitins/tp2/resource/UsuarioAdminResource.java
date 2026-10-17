@@ -6,6 +6,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import br.unitins.tp2.dto.PageResponse;
 import br.unitins.tp2.dto.UsuarioResponseDTO;
+import br.unitins.tp2.dto.UsuarioResumoResponseDTO;
 import br.unitins.tp2.mapper.UsuarioResponseMapper;
 import br.unitins.tp2.model.Usuario;
 import br.unitins.tp2.service.UsuarioService;
@@ -53,6 +54,13 @@ public class UsuarioAdminResource {
     @Path("/{id}")
     public UsuarioResponseDTO buscarPorId(@PathParam("id") Long id) {
         return UsuarioResponseMapper.toResponse(service.findById(id));
+    }
+
+    // resumo nao invasivo: perfil, assinaturas e contagens (sem o conteudo dos registros pessoais)
+    @GET
+    @Path("/{id}/resumo")
+    public UsuarioResumoResponseDTO buscarResumo(@PathParam("id") Long id) {
+        return service.buscarResumo(id);
     }
 
     // devolve o usuario ja com o novo estado, para a listagem atualizar a linha.
