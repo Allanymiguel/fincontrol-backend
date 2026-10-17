@@ -53,13 +53,19 @@ public class AssinaturaServiceImpl implements AssinaturaService {
 
         validarUnicaAtiva(usuario.getId(), null);
 
+        // "Nenhuma" so vale para assinatura sem custo (plano Gratuito ou cupom de 100%)
+        BigDecimal valorPago = calcularValorPago(plano, periodicidade, cupom);
+        if (formaPagamento == FormaPagamento.NENHUMA && valorPago.signum() > 0)
+            throw ValidationException.of("idFormaPagamento",
+                    "A forma de pagamento \"Nenhuma\" só vale para assinaturas sem custo.");
+
         Assinatura nova = new Assinatura();
         nova.setUsuario(usuario);
         nova.setPlano(plano);
         nova.setCupom(cupom);
         nova.setPeriodicidade(periodicidade);
         nova.setFormaPagamento(formaPagamento);
-        nova.setValorPago(calcularValorPago(plano, periodicidade, cupom));
+        nova.setValorPago(valorPago);
         nova.setStatus(StatusAssinatura.ATIVA);
         nova.setDataInicio(LocalDate.now());
         nova.setDataFim(null);
