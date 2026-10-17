@@ -25,12 +25,17 @@ public class ContatoServiceImpl implements ContatoService {
     @Inject
     MunicipioRepository municipioRepository;
 
+    @Inject
+    UsuarioLogadoService usuarioLogadoService;
+
     @Override
     @Transactional
     public Contato create(ContatoRequestDTO contato) {
-        validarDados(contato, null);
+        long idUsuario = usuarioLogadoService.idAtual();
+        validarDados(contato, null, idUsuario);
 
         Contato novoContato = new Contato();
+        novoContato.setUsuario(usuarioLogadoService.atual());
         aplicarDados(novoContato, contato);
 
         contatoRepository.persist(novoContato);
@@ -42,15 +47,15 @@ public class ContatoServiceImpl implements ContatoService {
     @Transactional
     public void update(long id, ContatoRequestDTO contato) {
         Contato edicaoContato = buscarContatoOuFalhar(id);
-        validarDados(contato, id);
+        validarDados(contato, id, edicaoContato.getUsuario().getId());
         aplicarDados(edicaoContato, contato);
     }
 
     @Override
     @Transactional
     public void delete(long id) {
-        if (!contatoRepository.deleteById(id))
-            throw new ResourceNotFoundException("Contato não encontrado.");
+        Contato contato = buscarContatoOuFalhar(id);
+        contatoRepository.delete(contato);
     }
 
     @Override
@@ -60,30 +65,31 @@ public class ContatoServiceImpl implements ContatoService {
 
     @Override
     public List<Contato> findAll(int page, int pageSize) {
-        return contatoRepository.findAll().page(page, pageSize).list();
+        return contatoRepository.findAllByUsuario(usuarioLogadoService.idAtual()).page(page, pageSize).list();
     }
 
     @Override
     public List<Contato> findByNome(String nome, int page, int pageSize) {
-        return contatoRepository.findByNome(nome).page(page, pageSize).list();
+        return contatoRepository.findByNomeAndUsuario(nome, usuarioLogadoService.idAtual()).page(page, pageSize).list();
     }
 
     @Override
     public long count() {
-        return contatoRepository.findAll().count();
+        return contatoRepository.countByUsuario(usuarioLogadoService.idAtual());
     }
 
     @Override
     public long count(String nome) {
-        return contatoRepository.findByNome(nome).count();
+        return contatoRepository.findByNomeAndUsuario(nome, usuarioLogadoService.idAtual()).count();
     }
 
-    // Regras que a Bean Validation (anotacoes do DTO) nao consegue checar sozinha
-    private void validarDados(ContatoRequestDTO dto, Long idContato) {
+    // Regras que a Bean Validation (anotacoes do DTO) nao consegue checar sozinha.
+    // O documento e unico por usuario, nao globalmente (dois usuarios podem ter o mesmo fornecedor).
+    private void validarDados(ContatoRequestDTO dto, Long idContato, long idUsuario) {
         if (!DocumentoUtil.isValido(dto.documento()))
             throw ValidationException.of("documento", "CPF/CNPJ inválido (dígitos verificadores não conferem).");
 
-        if (contatoRepository.findByDocumentoExceptId(dto.documento(), idContato) != null)
+        if (contatoRepository.findByDocumentoExceptIdAndUsuario(dto.documento(), idContato, idUsuario) != null)
             throw ValidationException.of("documento", "Já existe um contato cadastrado com esse CPF/CNPJ.");
     }
 
@@ -121,7 +127,7 @@ public class ContatoServiceImpl implements ContatoService {
     }
 
     private Contato buscarContatoOuFalhar(long id) {
-        Contato contato = contatoRepository.findById(id);
+        Contato contato = contatoRepository.findByIdAndUsuario(id, usuarioLogadoService.idAtual());
         if (contato == null)
             throw new ResourceNotFoundException("Contato não encontrado.");
 

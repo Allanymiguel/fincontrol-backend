@@ -24,10 +24,14 @@ public class TransacaoServiceImpl implements TransacaoService {
     @Inject
     CategoriaRepository categoriaRepository;
 
+    @Inject
+    UsuarioLogadoService usuarioLogadoService;
+
     @Override
     @Transactional
     public Transacao create(TransacaoRequestDTO transacao) {
         Transacao novaTransacao = new Transacao();
+        novaTransacao.setUsuario(usuarioLogadoService.atual());
         aplicarDados(novaTransacao, transacao);
 
         transacaoRepository.persist(novaTransacao);
@@ -45,8 +49,8 @@ public class TransacaoServiceImpl implements TransacaoService {
     @Override
     @Transactional
     public void delete(long id) {
-        if (!transacaoRepository.deleteById(id))
-            throw new ResourceNotFoundException("Transação não encontrada.");
+        Transacao transacao = buscarTransacaoOuFalhar(id);
+        transacaoRepository.delete(transacao);
     }
 
     @Override
@@ -56,42 +60,48 @@ public class TransacaoServiceImpl implements TransacaoService {
 
     @Override
     public List<Transacao> findAll(int page, int pageSize) {
-        return transacaoRepository.findAll().page(page, pageSize).list();
+        return transacaoRepository.findAllByUsuario(usuarioLogadoService.idAtual()).page(page, pageSize).list();
     }
 
     @Override
     public List<Transacao> findByDescricao(String descricao, int page, int pageSize) {
-        return transacaoRepository.findByDescricao(descricao).page(page, pageSize).list();
+        return transacaoRepository.findByDescricaoAndUsuario(descricao, usuarioLogadoService.idAtual())
+                .page(page, pageSize).list();
     }
 
     @Override
     public List<Transacao> findByCategoria(Long idCategoria, int page, int pageSize) {
-        return transacaoRepository.findByCategoria(idCategoria).page(page, pageSize).list();
+        return transacaoRepository.findByCategoriaAndUsuario(idCategoria, usuarioLogadoService.idAtual())
+                .page(page, pageSize).list();
     }
 
     @Override
     public List<Transacao> findByDescricaoAndCategoria(String descricao, Long idCategoria, int page, int pageSize) {
-        return transacaoRepository.findByDescricaoAndCategoria(descricao, idCategoria).page(page, pageSize).list();
+        return transacaoRepository
+                .findByDescricaoAndCategoriaAndUsuario(descricao, idCategoria, usuarioLogadoService.idAtual())
+                .page(page, pageSize).list();
     }
 
     @Override
     public long count() {
-        return transacaoRepository.findAll().count();
+        return transacaoRepository.countByUsuario(usuarioLogadoService.idAtual());
     }
 
     @Override
     public long count(String descricao) {
-        return transacaoRepository.findByDescricao(descricao).count();
+        return transacaoRepository.findByDescricaoAndUsuario(descricao, usuarioLogadoService.idAtual()).count();
     }
 
     @Override
     public long countByCategoria(Long idCategoria) {
-        return transacaoRepository.findByCategoria(idCategoria).count();
+        return transacaoRepository.findByCategoriaAndUsuario(idCategoria, usuarioLogadoService.idAtual()).count();
     }
 
     @Override
     public long count(String descricao, Long idCategoria) {
-        return transacaoRepository.findByDescricaoAndCategoria(descricao, idCategoria).count();
+        return transacaoRepository
+                .findByDescricaoAndCategoriaAndUsuario(descricao, idCategoria, usuarioLogadoService.idAtual())
+                .count();
     }
 
     private void aplicarDados(Transacao destino, TransacaoRequestDTO origem) {
@@ -119,8 +129,9 @@ public class TransacaoServiceImpl implements TransacaoService {
         return escopo;
     }
 
+    // so aceita categoria do mesmo usuario, para nao criar transacao na categoria dos outros
     private Categoria buscarCategoriaOuFalhar(Long idCategoria) {
-        Categoria categoria = categoriaRepository.findById(idCategoria);
+        Categoria categoria = categoriaRepository.findByIdAndUsuario(idCategoria, usuarioLogadoService.idAtual());
         if (categoria == null)
             throw ValidationException.of("idCategoria", "Categoria não encontrada.");
 
@@ -128,7 +139,7 @@ public class TransacaoServiceImpl implements TransacaoService {
     }
 
     private Transacao buscarTransacaoOuFalhar(long id) {
-        Transacao transacao = transacaoRepository.findById(id);
+        Transacao transacao = transacaoRepository.findByIdAndUsuario(id, usuarioLogadoService.idAtual());
         if (transacao == null)
             throw new ResourceNotFoundException("Transação não encontrada.");
 

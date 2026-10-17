@@ -13,6 +13,11 @@ import jakarta.persistence.ManyToOne;
 @Entity
 public class Transacao extends DefaultEntity {
 
+    // dono da transacao: cada usuario so acessa as proprias (RN12)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
+
     @Column(length = 120, nullable = false)
     private String descricao;
 
@@ -33,6 +38,14 @@ public class Transacao extends DefaultEntity {
     @ManyToOne(optional = false)
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
 
     public String getDescricao() {
         return descricao;

@@ -18,10 +18,14 @@ public class CategoriaServiceImpl implements CategoriaService {
     @Inject
     CategoriaRepository categoriaRepository;
 
+    @Inject
+    UsuarioLogadoService usuarioLogadoService;
+
     @Override
     @Transactional
     public Categoria create(CategoriaRequestDTO categoria) {
         Categoria novaCategoria = new Categoria();
+        novaCategoria.setUsuario(usuarioLogadoService.atual());
         aplicarDados(novaCategoria, categoria);
 
         categoriaRepository.persist(novaCategoria);
@@ -39,8 +43,8 @@ public class CategoriaServiceImpl implements CategoriaService {
     @Override
     @Transactional
     public void delete(long id) {
-        if (!categoriaRepository.deleteById(id))
-            throw new ResourceNotFoundException("Categoria não encontrada.");
+        Categoria categoria = buscarCategoriaOuFalhar(id);
+        categoriaRepository.delete(categoria);
     }
 
     @Override
@@ -50,22 +54,23 @@ public class CategoriaServiceImpl implements CategoriaService {
 
     @Override
     public List<Categoria> findAll(int page, int pageSize) {
-        return categoriaRepository.findAll().page(page, pageSize).list();
+        return categoriaRepository.findAllByUsuario(usuarioLogadoService.idAtual()).page(page, pageSize).list();
     }
 
     @Override
     public List<Categoria> findByNome(String nome, int page, int pageSize) {
-        return categoriaRepository.findByNome(nome).page(page, pageSize).list();
+        return categoriaRepository.findByNomeAndUsuario(nome, usuarioLogadoService.idAtual())
+                .page(page, pageSize).list();
     }
 
     @Override
     public long count() {
-        return categoriaRepository.findAll().count();
+        return categoriaRepository.countByUsuario(usuarioLogadoService.idAtual());
     }
 
     @Override
     public long count(String nome) {
-        return categoriaRepository.findByNome(nome).count();
+        return categoriaRepository.findByNomeAndUsuario(nome, usuarioLogadoService.idAtual()).count();
     }
 
     private void aplicarDados(Categoria destino, CategoriaRequestDTO origem) {
@@ -83,8 +88,9 @@ public class CategoriaServiceImpl implements CategoriaService {
         return tipo;
     }
 
+    // buscar escopado ao usuario logado: nao encontrado = 404 (mesmo que exista para outro dono)
     private Categoria buscarCategoriaOuFalhar(long id) {
-        Categoria categoria = categoriaRepository.findById(id);
+        Categoria categoria = categoriaRepository.findByIdAndUsuario(id, usuarioLogadoService.idAtual());
         if (categoria == null)
             throw new ResourceNotFoundException("Categoria não encontrada.");
 

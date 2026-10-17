@@ -4,9 +4,16 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 public class Categoria extends DefaultEntity {
+
+    // dono da categoria: cada usuario so acessa as proprias (RN12)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
 
     @Column(length = 60, nullable = false)
     private String nome;
@@ -20,6 +27,14 @@ public class Categoria extends DefaultEntity {
 
     @Column(nullable = false)
     private Boolean ativa;
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
 
     public String getNome() {
         return nome;

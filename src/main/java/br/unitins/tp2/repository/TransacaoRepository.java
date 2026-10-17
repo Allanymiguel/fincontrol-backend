@@ -5,24 +5,38 @@ import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 
+// Todas as consultas sao escopadas ao usuario logado (RN12).
 @ApplicationScoped
 public class TransacaoRepository implements PanacheRepository<Transacao> {
 
-    public PanacheQuery<Transacao> findByDescricao(String descricao) {
-        return find("lower(descricao) like lower(?1) order by data desc, descricao", "%" + descricao + "%");
+    public PanacheQuery<Transacao> findAllByUsuario(Long idUsuario) {
+        return find("usuario.id = ?1 order by data desc, descricao", idUsuario);
     }
 
-    public PanacheQuery<Transacao> findByCategoria(Long idCategoria) {
-        return find("categoria.id = ?1 order by data desc, descricao", idCategoria);
+    public PanacheQuery<Transacao> findByDescricaoAndUsuario(String descricao, Long idUsuario) {
+        return find("usuario.id = ?1 and lower(descricao) like lower(?2) order by data desc, descricao",
+                idUsuario, "%" + descricao + "%");
     }
 
-    public PanacheQuery<Transacao> findByDescricaoAndCategoria(String descricao, Long idCategoria) {
-        return find("lower(descricao) like lower(?1) and categoria.id = ?2 order by data desc, descricao",
-                "%" + descricao + "%", idCategoria);
+    public PanacheQuery<Transacao> findByCategoriaAndUsuario(Long idCategoria, Long idUsuario) {
+        return find("usuario.id = ?1 and categoria.id = ?2 order by data desc, descricao",
+                idUsuario, idCategoria);
     }
 
-    @Override
-    public PanacheQuery<Transacao> findAll() {
-        return find("order by data desc, descricao");
+    public PanacheQuery<Transacao> findByDescricaoAndCategoriaAndUsuario(String descricao, Long idCategoria,
+            Long idUsuario) {
+        return find(
+                "usuario.id = ?1 and lower(descricao) like lower(?2) and categoria.id = ?3 "
+                        + "order by data desc, descricao",
+                idUsuario, "%" + descricao + "%", idCategoria);
+    }
+
+    // acesso cross-usuario devolve null (service traduz em 404)
+    public Transacao findByIdAndUsuario(Long id, Long idUsuario) {
+        return find("id = ?1 and usuario.id = ?2", id, idUsuario).firstResult();
+    }
+
+    public long countByUsuario(Long idUsuario) {
+        return count("usuario.id = ?1", idUsuario);
     }
 }

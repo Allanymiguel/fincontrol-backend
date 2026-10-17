@@ -5,10 +5,17 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 // Pessoa (fisica ou juridica) com quem o usuario movimenta dinheiro: cliente ou fornecedor.
 @Entity
 public class Contato extends DefaultEntity {
+
+    // dono do contato: cada usuario so acessa os proprios (RN12)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
 
     @Column(length = 120, nullable = false)
     private String nome;
@@ -29,6 +36,14 @@ public class Contato extends DefaultEntity {
 
     @Embedded
     private Endereco endereco = new Endereco();
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
 
     public String getNome() {
         return nome;
