@@ -14,6 +14,11 @@ public abstract class EnumIdConverter<E extends Enum<E> & EnumComId> implements 
         this.tipo = tipo;
     }
 
+    // o enum deste converter (usado nos testes)
+    Class<E> tipo() {
+        return tipo;
+    }
+
     @Override
     public Integer convertToDatabaseColumn(E valor) {
         return valor == null ? null : valor.getId().intValue();
