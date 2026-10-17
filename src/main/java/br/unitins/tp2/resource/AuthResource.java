@@ -2,12 +2,14 @@ package br.unitins.tp2.resource;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
+import br.unitins.tp2.dto.CadastroCompletoDTO;
+import br.unitins.tp2.dto.CadastroSimplesDTO;
 import br.unitins.tp2.dto.LoginRequestDTO;
 import br.unitins.tp2.dto.RefreshTokenRequestDTO;
-import br.unitins.tp2.dto.RegistroRequestDTO;
 import br.unitins.tp2.dto.TokenResponseDTO;
 import br.unitins.tp2.dto.UsuarioResponseDTO;
 import br.unitins.tp2.mapper.UsuarioResponseMapper;
+import br.unitins.tp2.model.Papel;
 import br.unitins.tp2.service.AuthService;
 import br.unitins.tp2.service.UsuarioService;
 import io.quarkus.security.Authenticated;
@@ -42,12 +44,20 @@ public class AuthResource {
         return service.login(dto);
     }
 
-    // cria a conta (Keycloak + perfil) com papel USER; depois o usuario faz login normalmente
+    // Cadastro publico, sempre com papel USER, em duas formas: simples (nome, e-mail e senha) ou
+    // completo (com dados fiscais e endereco). Depois o usuario faz login normalmente.
     @POST
-    @Path("/registro")
+    @Path("/registro/simples")
     @PermitAll
-    public UsuarioResponseDTO registrar(RegistroRequestDTO dto) {
-        return UsuarioResponseMapper.toResponse(usuarioService.registrar(dto));
+    public UsuarioResponseDTO registrarSimples(CadastroSimplesDTO dto) {
+        return UsuarioResponseMapper.toResponse(usuarioService.cadastrarSimples(dto, Papel.USER));
+    }
+
+    @POST
+    @Path("/registro/completo")
+    @PermitAll
+    public UsuarioResponseDTO registrarCompleto(CadastroCompletoDTO dto) {
+        return UsuarioResponseMapper.toResponse(usuarioService.cadastrarCompleto(dto, Papel.USER));
     }
 
     @POST

@@ -27,6 +27,7 @@ public final class UsuarioResponseMapper {
                 usuario.getPapel(),
                 usuario.getAtivo(),
                 EnderecoResponseMapper.toResponse(usuario.getEndereco()),
+                usuario.isCadastroCompleto(),
                 toResumo(assinatura));
     }
 

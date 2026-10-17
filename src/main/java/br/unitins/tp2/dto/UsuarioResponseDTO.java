@@ -16,6 +16,8 @@ public record UsuarioResponseDTO(
     Papel papel,
     Boolean ativo,
     EnderecoResponseDTO endereco,
+    // false no cadastro simples (sem dados fiscais e endereco)
+    boolean cadastroCompleto,
     // so na listagem/consulta do admin; null quando nao se aplica (ou o usuario nao tem assinatura)
     AssinaturaResumoDTO assinatura
 ) {

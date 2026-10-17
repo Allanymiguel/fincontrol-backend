@@ -4,11 +4,10 @@ import org.hibernate.validator.constraints.Length;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 
-// Cadastro de conta pelo proprio usuario: a senha vai so para o Keycloak, nunca e salva aqui
-public record RegistroRequestDTO(
+// Cadastro simples: so o acesso (nome, e-mail e senha). Os dados fiscais e o endereco podem ser
+// completados depois pelo admin. A senha vai so para o Keycloak, nunca e salva aqui.
+public record CadastroSimplesDTO(
     @Length(min = 2, max = 120, message = "O nome deve conter entre 2 e 120 caracteres.")
     @NotBlank(message = "O nome deve ser informado.")
     String nome,
@@ -22,17 +21,7 @@ public record RegistroRequestDTO(
     @Length(min = 8, max = 64, message = "A senha deve conter entre 8 e 64 caracteres.")
     String senha,
 
-    @NotBlank(message = "O CPF/CNPJ deve ser informado.")
-    @Pattern(regexp = "\\d{11}|\\d{14}", message = "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos), somente números.")
-    String documento,
-
-    @Pattern(regexp = "\\d{10,11}", message = "O telefone deve ter DDD + número (10 ou 11 dígitos).")
-    String telefone,
-
-    @NotNull(message = "O perfil fiscal deve ser informado.")
-    Long idPerfilFiscal,
-
-    // obrigatoria so para MEI
-    Long idAtividadeMei
+    // so o admin escolhe (1 = USER, 2 = ADMIN); no cadastro publico e sempre USER
+    Long idPapel
 ) {
 }

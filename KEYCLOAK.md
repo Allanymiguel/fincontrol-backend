@@ -31,7 +31,7 @@ Depois suba o back (`./mvnw quarkus:dev`) e o front (`ng serve`) normalmente.
 | `joao@email.com` | `joao12345` | USER | ativo (MEI) |
 | `ana@email.com` | `ana12345` | USER | **desativada** (o login é recusado) |
 
-Os ids desses usuários no realm são os mesmos de `Usuario.keycloakId` no `import.sql`, então o perfil local e a conta do Keycloak já nascem ligados. Contas novas são criadas pela tela **Criar conta** (`POST /auth/registro`) e recebem a role `USER`.
+Os ids desses usuários no realm são os mesmos de `Usuario.keycloakId` no `import.sql`, então o perfil local e a conta do Keycloak já nascem ligados. Contas novas são criadas pela tela **Criar conta** (`POST /auth/registro/simples` ou `/completo`), sempre com a role `USER`, ou pelo admin em **Usuários** (`POST /admin/usuarios/simples` ou `/completo`), com a role `USER` ou `ADMIN`.
 
 **Os papéis são separados:** o admin só tem `ADMIN` e não acessa Transações, Categorias e Contatos (403), que são dados pessoais de cada usuário. Para usar o controle financeiro, use uma conta `USER` (por exemplo `joao@email.com` ou uma criada em **Criar conta**).
 
@@ -60,7 +60,8 @@ Todas as telas ficam acessíveis sem login. Sem token, as telas operacionais usa
 | `POST /auth/login` | público | `{email, senha}` → `{accessToken, expiresIn, refreshToken, refreshExpiresIn}` |
 | `POST /auth/refresh` | público | `{refreshToken}` → tokens novos |
 | `POST /auth/logout` | público | `{refreshToken}` → encerra a sessão no Keycloak |
-| `POST /auth/registro` | público | cria a conta (Keycloak + perfil) com role `USER` |
+| `POST /auth/registro/simples` | público | cria a conta (Keycloak + perfil) com role `USER`, só com nome, e-mail e senha |
+| `POST /auth/registro/completo` | público | idem, com CPF/CNPJ, perfil fiscal, telefone e endereço |
 | `GET /auth/me` | logado | perfil do dono do token |
 
 Erros seguem o mesmo formato `Problem` (RFC 7807) do resto da API: 401 para credenciais erradas, conta desativada ou sessão expirada; 403 para quem não tem a role; 503 se o Keycloak estiver fora do ar ou o client estiver mal configurado (o motivo real vai para o log).
@@ -74,10 +75,11 @@ Erros seguem o mesmo formato `Problem` (RFC 7807) do resto da API: 401 para cred
 ## Regras implementadas
 
 - **RN12 (isolamento por usuário):** `Transacao`, `Categoria` e `Contato` têm o campo `usuario`. Cada `USER` vê somente seus próprios registros; tentar acessar o id de outro usuário responde 404 (sem vazar existência). `UsuarioLogadoService` resolve o usuário atual a partir do `sub` do JWT.
-- **RN13 (defaults no cadastro):** `POST /auth/registro` copia as `CategoriaPadrao` não arquivadas para o novo usuário e cria a `Assinatura` do usuário no plano **Gratuito** (precisa existir no banco; o seed já traz). A cópia é feita **uma única vez**, no momento do cadastro.
+- **RN13 (defaults no cadastro):** todo cadastro com papel `USER` (público ou pelo admin, simples ou completo) copia as `CategoriaPadrao` não arquivadas para o novo usuário e cria a `Assinatura` do usuário no plano **Gratuito** (precisa existir no banco; o seed já traz). A cópia é feita **uma única vez**, no momento do cadastro.
   - Alterações posteriores em `CategoriaPadrao` (adicionar, editar, arquivar) **só afetam cadastros feitos a partir daquele momento**. Usuários existentes mantêm as próprias categorias — o controle delas pertence a cada usuário.
 - **RN16 (assinatura única e troca de plano):** cada usuário tem **uma** `Assinatura` (o admin não tem). Trocar de plano altera essa mesma assinatura; o histórico do que foi cobrado fica em `Pagamento`. As trocas seguem a lógica da Netflix e são feitas pelo admin em `/admin/usuarios/{id}/assinatura`:
   - **Plano mais caro** (preço por dia maior, já com o cupom): vale **na hora**, sem cobrança. O saldo não usado do período atual vira dias do plano novo, então a próxima cobrança fica mais cedo. Saindo do Gratuito não há saldo: o primeiro ciclo é cobrado na hora.
   - **Plano mais barato:** fica **agendado** para a próxima cobrança; os recursos atuais continuam até lá. Uma nova troca antes da cobrança substitui a agendada, e escolher de novo o plano vigente desfaz o agendamento.
   - **Cancelar o plano pago** = voltar ao Gratuito na próxima cobrança (ninguém fica sem assinatura).
   - **Cobrança:** um agendador diário (`fincontrol.cobranca.cron`) aplica as trocas agendadas e registra um `Pagamento` APROVADO (pagamento simulado, RN15) para cada cobrança vencida. Conta desativada não é cobrada: volta ao Gratuito na data da cobrança.
+- **Cadastro simples e completo:** o **simples** tem só o acesso (nome, e-mail e senha); o **completo** inclui CPF/CNPJ (PF usa CPF; MEI e ME usam CNPJ), perfil fiscal, atividade do MEI, telefone e endereço (o município vem da consulta do CEP, que é pública). Cliente e admin podem ter qualquer uma das formas. O `ADMIN` não recebe categorias nem assinatura.

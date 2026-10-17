@@ -1,9 +1,14 @@
 package br.unitins.tp2.service;
 
 import java.util.List;
+import java.util.function.Consumer;
 
-import br.unitins.tp2.dto.RegistroRequestDTO;
+import br.unitins.tp2.dto.CadastroCompletoDTO;
+import br.unitins.tp2.dto.CadastroSimplesDTO;
+import br.unitins.tp2.dto.UsuarioEdicaoCompletaDTO;
+import br.unitins.tp2.dto.UsuarioEdicaoSimplesDTO;
 import br.unitins.tp2.dto.UsuarioResumoResponseDTO;
+import br.unitins.tp2.exception.Problem;
 import br.unitins.tp2.exception.ResourceNotFoundException;
 import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.mapper.AssinaturaResponseMapper;
@@ -12,6 +17,8 @@ import br.unitins.tp2.mapper.UsuarioResponseMapper;
 import br.unitins.tp2.model.AtividadeMei;
 import br.unitins.tp2.model.Categoria;
 import br.unitins.tp2.model.CategoriaPadrao;
+import br.unitins.tp2.model.Endereco;
+import br.unitins.tp2.model.Municipio;
 import br.unitins.tp2.model.Papel;
 import br.unitins.tp2.model.PerfilFiscal;
 import br.unitins.tp2.model.Usuario;
@@ -19,6 +26,7 @@ import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.repository.CategoriaPadraoRepository;
 import br.unitins.tp2.repository.CategoriaRepository;
 import br.unitins.tp2.repository.ContatoRepository;
+import br.unitins.tp2.repository.MunicipioRepository;
 import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.TransacaoRepository;
 import br.unitins.tp2.repository.UsuarioRepository;
@@ -57,43 +65,120 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Inject
     ContatoRepository contatoRepository;
 
-    // Cria a conta no Keycloak (login e senha) e depois o perfil local, ligado pelo keycloakId.
-    // Nao ha transacao entre os dois: se o perfil local falhar, o usuario do Keycloak e excluido.
-    // RN13: toda conta nova recebe uma copia das CategoriaPadrao nao arquivadas e uma Assinatura
-    // ATIVA no plano Gratuito. A copia e feita UMA UNICA VEZ aqui; mudancas futuras em
-    // CategoriaPadrao nao afetam este usuario (nem reinserem o que ele apagar).
-    @Override
-    public Usuario registrar(RegistroRequestDTO registro) {
-        String email = registro.email().trim().toLowerCase();
-        PerfilFiscal perfil = buscarPerfilOuFalhar(registro.idPerfilFiscal());
-        AtividadeMei atividade = validarDados(registro, email, perfil);
+    @Inject
+    MunicipioRepository municipioRepository;
 
-        String keycloakId = keycloakAdminService.criarUsuario(email, registro.nome(), registro.senha());
+    // dados fiscais e endereco ja validados (cadastro e edicao completos)
+    private record DadosCompletos(String documento, String telefone, PerfilFiscal perfil, AtividadeMei atividade,
+            Endereco endereco) {
+    }
+
+    @Override
+    public Usuario cadastrarSimples(CadastroSimplesDTO cadastro, Papel papel) {
+        String email = normalizarEmail(cadastro.email());
+        validarEmailLivre(email, null);
+
+        return criarConta(cadastro.nome(), email, cadastro.senha(), papel, usuario -> {
+        });
+    }
+
+    @Override
+    public Usuario cadastrarCompleto(CadastroCompletoDTO cadastro, Papel papel) {
+        String email = normalizarEmail(cadastro.email());
+        validarEmailLivre(email, null);
+        DadosCompletos dados = montarDadosCompletos(cadastro.documento(), cadastro.telefone(),
+                cadastro.idPerfilFiscal(), cadastro.idAtividadeMei(), cadastro.cep(), cadastro.logradouro(),
+                cadastro.numero(), cadastro.complemento(), cadastro.bairro(), cadastro.idMunicipio());
+
+        return criarConta(cadastro.nome(), email, cadastro.senha(), papel, usuario -> aplicar(usuario, dados));
+    }
+
+    // Cria a conta no Keycloak (login e senha, com a role do papel) e depois o perfil local, ligado
+    // pelo keycloakId. Nao ha transacao entre os dois: se o perfil local falhar, a conta do Keycloak
+    // e excluida. RN13: todo USER novo recebe uma copia das CategoriaPadrao nao arquivadas e a
+    // assinatura no plano Gratuito; a copia e feita UMA UNICA VEZ aqui (mudancas futuras em
+    // CategoriaPadrao nao afetam este usuario). O ADMIN nao tem dados pessoais nem assinatura.
+    private Usuario criarConta(String nome, String email, String senha, Papel papel, Consumer<Usuario> dados) {
+        String keycloakId = keycloakAdminService.criarUsuario(email, nome, senha);
 
         try {
-            keycloakAdminService.atribuirRole(keycloakId, Papel.USER.name());
+            keycloakAdminService.atribuirRole(keycloakId, papel.name());
 
             return QuarkusTransaction.requiringNew().call(() -> {
                 Usuario usuario = new Usuario();
                 usuario.setKeycloakId(keycloakId);
-                usuario.setNome(registro.nome().trim());
+                usuario.setNome(nome.trim());
                 usuario.setEmail(email);
-                usuario.setDocumento(registro.documento());
-                usuario.setTelefone(vazioParaNull(registro.telefone()));
-                usuario.setPerfilFiscal(perfil);
-                usuario.setAtividadeMei(atividade);
-                usuario.setPapel(Papel.USER);
+                usuario.setPapel(papel);
                 usuario.setAtivo(true);
+                dados.accept(usuario);
 
                 usuarioRepository.persist(usuario);
 
-                copiarCategoriasPadrao(usuario);
-                assinaturaService.criarGratuita(usuario);
+                if (papel == Papel.USER) {
+                    copiarCategoriasPadrao(usuario);
+                    assinaturaService.criarGratuita(usuario);
+                }
 
                 return usuario;
             });
         } catch (RuntimeException e) {
             keycloakAdminService.excluirUsuario(keycloakId);
+            throw e;
+        }
+    }
+
+    // cadastro completo nao volta a ser simples (apagaria dados): para ele, so a edicao completa
+    @Override
+    public Usuario editarSimples(long id, UsuarioEdicaoSimplesDTO edicao) {
+        Usuario usuario = buscarUsuarioOuFalhar(id);
+        if (usuario.isCadastroCompleto()) {
+            String mensagem = "Este usuário tem cadastro completo: edite-o pelo formulário completo.";
+            throw new ValidationException(mensagem, List.of(new Problem.FieldError("cadastroCompleto", mensagem)));
+        }
+
+        String email = normalizarEmail(edicao.email());
+        validarEmailLivre(email, id);
+
+        return atualizarConta(id, edicao.nome().trim(), email, u -> {
+        });
+    }
+
+    @Override
+    public Usuario editarCompleto(long id, UsuarioEdicaoCompletaDTO edicao) {
+        buscarUsuarioOuFalhar(id);
+        String email = normalizarEmail(edicao.email());
+        validarEmailLivre(email, id);
+        DadosCompletos dados = montarDadosCompletos(edicao.documento(), edicao.telefone(),
+                edicao.idPerfilFiscal(), edicao.idAtividadeMei(), edicao.cep(), edicao.logradouro(),
+                edicao.numero(), edicao.complemento(), edicao.bairro(), edicao.idMunicipio());
+
+        return atualizarConta(id, edicao.nome().trim(), email, u -> aplicar(u, dados));
+    }
+
+    // Nome e e-mail tambem mudam no Keycloak (o e-mail e o login). O Keycloak muda primeiro;
+    // se o perfil local falhar, ele volta ao que era.
+    private Usuario atualizarConta(long id, String nome, String email, Consumer<Usuario> dados) {
+        Usuario atual = buscarUsuarioOuFalhar(id);
+        String keycloakId = atual.getKeycloakId();
+        String nomeAntigo = atual.getNome();
+        String emailAntigo = atual.getEmail();
+        boolean mudaConta = keycloakId != null && (!nome.equals(nomeAntigo) || !email.equals(emailAntigo));
+
+        if (mudaConta)
+            keycloakAdminService.atualizarDados(keycloakId, email, nome);
+
+        try {
+            return QuarkusTransaction.requiringNew().call(() -> {
+                Usuario usuario = buscarUsuarioOuFalhar(id);
+                usuario.setNome(nome);
+                usuario.setEmail(email);
+                dados.accept(usuario);
+                return usuario;
+            });
+        } catch (RuntimeException e) {
+            if (mudaConta)
+                keycloakAdminService.atualizarDados(keycloakId, emailAntigo, nomeAntigo);
             throw e;
         }
     }
@@ -179,30 +264,62 @@ public class UsuarioServiceImpl implements UsuarioService {
         return usuarioRepository.findByFiltros(busca, idPlano).count();
     }
 
-    // Regras que a Bean Validation (anotacoes do DTO) nao consegue checar sozinha.
-    // Devolve a atividade do MEI (nula para os outros perfis).
-    private AtividadeMei validarDados(RegistroRequestDTO dto, String email, PerfilFiscal perfil) {
-        if (usuarioRepository.findByEmail(email) != null)
-            throw ValidationException.of("email", "Já existe uma conta com esse e-mail.");
+    private String normalizarEmail(String email) {
+        return email.trim().toLowerCase();
+    }
 
-        if (!DocumentoUtil.isValido(dto.documento()))
+    // o e-mail e o login: unico entre os usuarios (ignorando o proprio, na edicao)
+    private void validarEmailLivre(String email, Long idUsuario) {
+        Usuario dono = usuarioRepository.findByEmail(email);
+        if (dono != null && !dono.getId().equals(idUsuario))
+            throw ValidationException.of("email", "Já existe uma conta com esse e-mail.");
+    }
+
+    // Regras que a Bean Validation (anotacoes do DTO) nao consegue checar sozinha: documento valido
+    // e compativel com o perfil (PF usa CPF; MEI e ME usam CNPJ), atividade so para MEI e o municipio
+    // resolvido pela consulta do CEP.
+    private DadosCompletos montarDadosCompletos(String documento, String telefone, Long idPerfil,
+            Long idAtividade, String cep, String logradouro, String numero, String complemento, String bairro,
+            Long idMunicipio) {
+        PerfilFiscal perfil = buscarPerfilOuFalhar(idPerfil);
+
+        if (!DocumentoUtil.isValido(documento))
             throw ValidationException.of("documento", "CPF/CNPJ inválido (dígitos verificadores não conferem).");
 
-        // PF usa CPF; MEI e ME sao empresas e usam CNPJ
-        boolean isCpf = dto.documento().length() == 11;
+        boolean isCpf = documento.length() == 11;
         if (perfil == PerfilFiscal.PF && !isCpf)
             throw ValidationException.of("documento", "Pessoa física deve informar um CPF.");
         if (perfil != PerfilFiscal.PF && isCpf)
             throw ValidationException.of("documento", "MEI e microempresa devem informar um CNPJ.");
 
-        if (perfil != PerfilFiscal.MEI)
-            return null;
+        AtividadeMei atividade = null;
+        if (perfil == PerfilFiscal.MEI) {
+            atividade = AtividadeMei.valueOf(idAtividade);
+            if (atividade == null)
+                throw ValidationException.of("idAtividadeMei", "Informe a atividade do MEI.");
+        }
 
-        AtividadeMei atividade = AtividadeMei.valueOf(dto.idAtividadeMei());
-        if (atividade == null)
-            throw ValidationException.of("idAtividadeMei", "Informe a atividade do MEI.");
+        Municipio municipio = municipioRepository.findById(idMunicipio);
+        if (municipio == null)
+            throw ValidationException.of("idMunicipio", "Município não encontrado. Consulte o CEP novamente.");
 
-        return atividade;
+        Endereco endereco = new Endereco();
+        endereco.setCep(cep);
+        endereco.setLogradouro(logradouro.trim());
+        endereco.setNumero(numero.trim());
+        endereco.setComplemento(vazioParaNull(complemento));
+        endereco.setBairro(bairro.trim());
+        endereco.setMunicipio(municipio);
+
+        return new DadosCompletos(documento, vazioParaNull(telefone), perfil, atividade, endereco);
+    }
+
+    private void aplicar(Usuario usuario, DadosCompletos dados) {
+        usuario.setDocumento(dados.documento());
+        usuario.setTelefone(dados.telefone());
+        usuario.setPerfilFiscal(dados.perfil());
+        usuario.setAtividadeMei(dados.atividade());
+        usuario.setEndereco(dados.endereco());
     }
 
     private PerfilFiscal buscarPerfilOuFalhar(Long idPerfil) {

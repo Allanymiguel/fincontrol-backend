@@ -34,12 +34,8 @@ public class KeycloakAdminService {
 
     // cria o usuario ja com a senha definitiva e devolve o id dele no Keycloak
     public String criarUsuario(String email, String nome, String senha) {
-        String[] partes = nome.trim().split("\\s+", 2);
-        // o Keycloak 26 exige nome e sobrenome; sem eles o login responde "Account is not fully set up"
-        String primeiroNome = partes[0];
-        String sobrenome = partes.length > 1 ? partes[1] : partes[0];
-
-        KeycloakUsuario novo = new KeycloakUsuario(null, email, email, primeiroNome, sobrenome, true, true,
+        String[] nomes = separarNome(nome);
+        KeycloakUsuario novo = new KeycloakUsuario(null, email, email, nomes[0], nomes[1], true, true,
                 List.of(KeycloakUsuario.Credencial.senha(senha)));
 
         try (Response resposta = executar(token -> adminClient.criarUsuario(token, novo))) {
@@ -47,6 +43,23 @@ public class KeycloakAdminService {
             String location = resposta.getLocation().getPath();
             return location.substring(location.lastIndexOf('/') + 1);
         }
+    }
+
+    // e-mail (que tambem e o username, usado no login) e nome; o resto da conta nao muda.
+    // Exige editUsernameAllowed no realm.
+    public void atualizarDados(String keycloakId, String email, String nome) {
+        String[] nomes = separarNome(nome);
+        executar(token -> {
+            adminClient.atualizarUsuario(token, keycloakId,
+                    new KeycloakUsuario(null, email, email, nomes[0], nomes[1], null, null, null));
+            return null;
+        });
+    }
+
+    // o Keycloak 26 exige nome e sobrenome; sem eles o login responde "Account is not fully set up"
+    private static String[] separarNome(String nome) {
+        String[] partes = nome.trim().split("\\s+", 2);
+        return new String[] { partes[0], partes.length > 1 ? partes[1] : partes[0] };
     }
 
     public void atribuirRole(String keycloakId, String nomeRole) {

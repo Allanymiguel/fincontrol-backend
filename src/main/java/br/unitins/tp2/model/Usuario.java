@@ -35,8 +35,9 @@ public class Usuario extends DefaultEntity {
     @Column(length = 11)
     private String telefone;
 
+    // nulo no cadastro simples (so nome, e-mail e senha)
     @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
+    @Column(length = 20)
     private PerfilFiscal perfilFiscal;
 
     // obrigatoria so quando perfilFiscal = MEI
@@ -61,6 +62,11 @@ public class Usuario extends DefaultEntity {
     @AttributeOverride(name = "bairro", column = @Column(name = "bairro", length = 60))
     @AssociationOverride(name = "municipio", joinColumns = @JoinColumn(name = "id_municipio"))
     private Endereco endereco;
+
+    // cadastro completo = dados fiscais e endereco preenchidos; o simples tem so o acesso
+    public boolean isCadastroCompleto() {
+        return documento != null && perfilFiscal != null && endereco != null;
+    }
 
     public String getKeycloakId() {
         return keycloakId;

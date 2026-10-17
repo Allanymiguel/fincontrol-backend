@@ -7,11 +7,15 @@ import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
+import br.unitins.tp2.dto.CadastroCompletoDTO;
+import br.unitins.tp2.dto.CadastroSimplesDTO;
 import br.unitins.tp2.dto.PageResponse;
 import br.unitins.tp2.dto.UsuarioResponseDTO;
 import br.unitins.tp2.dto.UsuarioResumoResponseDTO;
 import br.unitins.tp2.mapper.UsuarioResponseMapper;
+import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.model.Assinatura;
+import br.unitins.tp2.model.Papel;
 import br.unitins.tp2.model.Usuario;
 import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.service.UsuarioService;
@@ -19,18 +23,22 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
-// Somente consulta e ativacao: as contas sao criadas pelo cadastro (POST /auth/registro).
-// Gestao de usuarios e exclusiva do administrador (RN12)
+// Gestao de usuarios, exclusiva do administrador (RN12): consulta, criacao (cadastro simples ou
+// completo, com papel USER ou ADMIN), edicao e ativacao. O usuario tambem pode se cadastrar
+// sozinho (POST /auth/registro/...), sempre como USER.
 @RolesAllowed("ADMIN")
 @Path("admin/usuarios")
 @Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 public class UsuarioAdminResource {
 
     @Inject
@@ -62,6 +70,20 @@ public class UsuarioAdminResource {
                 u -> UsuarioResponseMapper.toResponse(u, assinaturas.get(u.getId())));
     }
 
+    // cadastro simples: so nome, e-mail, senha e papel
+    @POST
+    @Path("/simples")
+    public UsuarioResponseDTO cadastrarSimples(CadastroSimplesDTO dto) {
+        return comAssinatura(service.cadastrarSimples(dto, papelInformado(dto == null ? null : dto.idPapel())));
+    }
+
+    // cadastro completo: tambem dados fiscais e endereco
+    @POST
+    @Path("/completo")
+    public UsuarioResponseDTO cadastrarCompleto(CadastroCompletoDTO dto) {
+        return comAssinatura(service.cadastrarCompleto(dto, papelInformado(dto == null ? null : dto.idPapel())));
+    }
+
     @GET
     @Path("/{id}")
     public UsuarioResponseDTO buscarPorId(@PathParam("id") Long id) {
@@ -81,6 +103,14 @@ public class UsuarioAdminResource {
     @Path("/{id}/ativar")
     public UsuarioResponseDTO alternarAtivo(@PathParam("id") Long id) {
         return comAssinatura(service.alternarAtivo(id, jwt.getSubject()));
+    }
+
+    // no cadastro pelo admin o papel e obrigatorio (1 = USER, 2 = ADMIN)
+    private Papel papelInformado(Long idPapel) {
+        Papel papel = Papel.valueOf(idPapel);
+        if (papel == null)
+            throw ValidationException.of("idPapel", "Selecione o papel do usuário.");
+        return papel;
     }
 
     private UsuarioResponseDTO comAssinatura(Usuario usuario) {
