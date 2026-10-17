@@ -1,11 +1,8 @@
 package br.unitins.tp2.model;
 
-import jakarta.persistence.AssociationOverride;
-import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
 
 // Dono dos dados do sistema. O login e a senha ficam no Keycloak; aqui ficam o perfil
 // (dados fiscais, endereco, papel) e o vinculo com o usuario do Keycloak (keycloakId).
@@ -45,15 +42,8 @@ public class Usuario extends DefaultEntity {
     @Column(nullable = false)
     private Boolean ativo;
 
-    // No Contato o endereco e obrigatorio; no usuario e opcional (0..1 no UML),
-    // por isso as colunas do Endereco sao sobrescritas aqui como anulaveis.
+    // opcional (0..1 no UML): o cadastro simples nao tem endereco
     @Embedded
-    @AttributeOverride(name = "cep", column = @Column(name = "cep", length = 8))
-    @AttributeOverride(name = "logradouro", column = @Column(name = "logradouro", length = 120))
-    @AttributeOverride(name = "numero", column = @Column(name = "numero", length = 10))
-    @AttributeOverride(name = "complemento", column = @Column(name = "complemento", length = 60))
-    @AttributeOverride(name = "bairro", column = @Column(name = "bairro", length = 60))
-    @AssociationOverride(name = "municipio", joinColumns = @JoinColumn(name = "id_municipio"))
     private Endereco endereco;
 
     // cadastro completo = dados fiscais e endereco preenchidos; o simples tem so o acesso

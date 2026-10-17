@@ -9,6 +9,8 @@ public record ContatoResponseDTO(
     String documento,
     String email,
     String telefone,
-    EnderecoResponseDTO endereco
+    EnderecoResponseDTO endereco,
+    // false no cadastro simples (sem CPF/CNPJ e endereco)
+    boolean cadastroCompleto
 ) {
 }

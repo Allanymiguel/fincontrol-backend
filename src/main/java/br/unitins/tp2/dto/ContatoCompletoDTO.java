@@ -7,7 +7,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
-public record ContatoRequestDTO(
+// Contato completo: tambem CPF/CNPJ e endereco (o municipio vem da consulta do CEP).
+public record ContatoCompletoDTO(
     @Length(min = 2, max = 120, message = "O nome deve conter entre 2 e 120 caracteres.")
     @NotBlank(message = "O nome deve ser informado.")
     String nome,

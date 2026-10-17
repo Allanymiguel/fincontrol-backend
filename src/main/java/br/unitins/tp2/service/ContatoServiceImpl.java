@@ -2,7 +2,9 @@ package br.unitins.tp2.service;
 
 import java.util.List;
 
-import br.unitins.tp2.dto.ContatoRequestDTO;
+import br.unitins.tp2.dto.ContatoCompletoDTO;
+import br.unitins.tp2.dto.ContatoSimplesDTO;
+import br.unitins.tp2.exception.Problem;
 import br.unitins.tp2.exception.ResourceNotFoundException;
 import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.model.Contato;
@@ -28,15 +30,13 @@ public class ContatoServiceImpl implements ContatoService {
     @Inject
     UsuarioLogadoService usuarioLogadoService;
 
+    // simples: so nome, tipo, telefone e e-mail (sem CPF/CNPJ e endereco)
     @Override
     @Transactional
-    public Contato create(ContatoRequestDTO contato) {
-        long idUsuario = usuarioLogadoService.idAtual();
-        validarDados(contato, null, idUsuario);
-
+    public Contato createSimples(ContatoSimplesDTO contato) {
         Contato novoContato = new Contato();
         novoContato.setUsuario(usuarioLogadoService.atual());
-        aplicarDados(novoContato, contato);
+        aplicarDadosBasicos(novoContato, contato.nome(), contato.idTipo(), contato.email(), contato.telefone());
 
         contatoRepository.persist(novoContato);
 
@@ -45,10 +45,39 @@ public class ContatoServiceImpl implements ContatoService {
 
     @Override
     @Transactional
-    public void update(long id, ContatoRequestDTO contato) {
+    public Contato createCompleto(ContatoCompletoDTO contato) {
+        long idUsuario = usuarioLogadoService.idAtual();
+        validarDocumento(contato, null, idUsuario);
+
+        Contato novoContato = new Contato();
+        novoContato.setUsuario(usuarioLogadoService.atual());
+        aplicarDadosCompletos(novoContato, contato);
+
+        contatoRepository.persist(novoContato);
+
+        return novoContato;
+    }
+
+    // contato completo nao volta a ser simples (apagaria o documento e o endereco)
+    @Override
+    @Transactional
+    public void updateSimples(long id, ContatoSimplesDTO contato) {
         Contato edicaoContato = buscarContatoOuFalhar(id);
-        validarDados(contato, id, edicaoContato.getUsuario().getId());
-        aplicarDados(edicaoContato, contato);
+        if (edicaoContato.isCadastroCompleto()) {
+            String mensagem = "Este contato tem cadastro completo: edite-o pelo formulário completo.";
+            throw new ValidationException(mensagem, List.of(new Problem.FieldError("cadastroCompleto", mensagem)));
+        }
+
+        aplicarDadosBasicos(edicaoContato, contato.nome(), contato.idTipo(), contato.email(), contato.telefone());
+    }
+
+    // completa um contato simples ou atualiza um completo
+    @Override
+    @Transactional
+    public void updateCompleto(long id, ContatoCompletoDTO contato) {
+        Contato edicaoContato = buscarContatoOuFalhar(id);
+        validarDocumento(contato, id, edicaoContato.getUsuario().getId());
+        aplicarDadosCompletos(edicaoContato, contato);
     }
 
     @Override
@@ -85,7 +114,7 @@ public class ContatoServiceImpl implements ContatoService {
 
     // Regras que a Bean Validation (anotacoes do DTO) nao consegue checar sozinha.
     // O documento e unico por usuario, nao globalmente (dois usuarios podem ter o mesmo fornecedor).
-    private void validarDados(ContatoRequestDTO dto, Long idContato, long idUsuario) {
+    private void validarDocumento(ContatoCompletoDTO dto, Long idContato, long idUsuario) {
         if (!DocumentoUtil.isValido(dto.documento()))
             throw ValidationException.of("documento", "CPF/CNPJ inválido (dígitos verificadores não conferem).");
 
@@ -93,12 +122,17 @@ public class ContatoServiceImpl implements ContatoService {
             throw ValidationException.of("documento", "Já existe um contato cadastrado com esse CPF/CNPJ.");
     }
 
-    private void aplicarDados(Contato destino, ContatoRequestDTO origem) {
-        destino.setNome(origem.nome().trim());
-        destino.setTipo(buscarTipoOuFalhar(origem.idTipo()));
+    // campos das duas formas de cadastro
+    private void aplicarDadosBasicos(Contato destino, String nome, Long idTipo, String email, String telefone) {
+        destino.setNome(nome.trim());
+        destino.setTipo(buscarTipoOuFalhar(idTipo));
+        destino.setEmail(vazioParaNull(email));
+        destino.setTelefone(vazioParaNull(telefone));
+    }
+
+    private void aplicarDadosCompletos(Contato destino, ContatoCompletoDTO origem) {
+        aplicarDadosBasicos(destino, origem.nome(), origem.idTipo(), origem.email(), origem.telefone());
         destino.setDocumento(origem.documento());
-        destino.setEmail(vazioParaNull(origem.email()));
-        destino.setTelefone(vazioParaNull(origem.telefone()));
 
         Endereco endereco = destino.getEndereco() != null ? destino.getEndereco() : new Endereco();
         endereco.setCep(origem.cep());

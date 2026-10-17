@@ -2,7 +2,8 @@ package br.unitins.tp2.resource;
 
 import java.util.List;
 
-import br.unitins.tp2.dto.ContatoRequestDTO;
+import br.unitins.tp2.dto.ContatoCompletoDTO;
+import br.unitins.tp2.dto.ContatoSimplesDTO;
 import br.unitins.tp2.dto.ContatoResponseDTO;
 import br.unitins.tp2.dto.PageResponse;
 import br.unitins.tp2.mapper.ContatoResponseMapper;
@@ -52,15 +53,32 @@ public class ContatoResource {
         return ContatoResponseMapper.toResponse(service.findById(id));
     }
 
+    // cadastro simples: nome, tipo e telefone (e-mail opcional)
     @POST
-    public ContatoResponseDTO incluir(ContatoRequestDTO dto) {
-        return ContatoResponseMapper.toResponse(service.create(dto));
+    @Path("/simples")
+    public ContatoResponseDTO incluirSimples(ContatoSimplesDTO dto) {
+        return ContatoResponseMapper.toResponse(service.createSimples(dto));
     }
 
+    // cadastro completo: tambem CPF/CNPJ e endereco
+    @POST
+    @Path("/completo")
+    public ContatoResponseDTO incluirCompleto(ContatoCompletoDTO dto) {
+        return ContatoResponseMapper.toResponse(service.createCompleto(dto));
+    }
+
+    // so para contato simples; um completo nao volta a ser simples
     @PUT
-    @Path("/{id}")
-    public void alterar(@PathParam("id") Long id, ContatoRequestDTO contato) {
-        service.update(id, contato);
+    @Path("/{id}/simples")
+    public void alterarSimples(@PathParam("id") Long id, ContatoSimplesDTO contato) {
+        service.updateSimples(id, contato);
+    }
+
+    // completa um contato simples ou atualiza um completo
+    @PUT
+    @Path("/{id}/completo")
+    public void alterarCompleto(@PathParam("id") Long id, ContatoCompletoDTO contato) {
+        service.updateCompleto(id, contato);
     }
 
     @DELETE

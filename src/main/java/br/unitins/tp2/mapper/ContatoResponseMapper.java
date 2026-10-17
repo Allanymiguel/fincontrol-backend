@@ -16,6 +16,7 @@ public final class ContatoResponseMapper {
                 contato.getDocumento(),
                 contato.getEmail(),
                 contato.getTelefone(),
-                EnderecoResponseMapper.toResponse(contato.getEndereco()));
+                EnderecoResponseMapper.toResponse(contato.getEndereco()),
+                contato.isCadastroCompleto());
     }
 }

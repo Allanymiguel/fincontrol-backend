@@ -21,8 +21,10 @@ public class Contato extends DefaultEntity {
     @Column(nullable = false)
     private TipoContato tipo;
 
-    // CPF (11 digitos) ou CNPJ (14 digitos), salvo somente com numeros
-    @Column(length = 14, nullable = false, unique = true)
+    // CPF (11 digitos) ou CNPJ (14 digitos), salvo somente com numeros; so no cadastro completo.
+    // Unico por usuario (regra no service), nao no banco inteiro: dois usuarios podem ter o
+    // mesmo fornecedor.
+    @Column(length = 14)
     private String documento;
 
     @Column(length = 120)
@@ -31,8 +33,14 @@ public class Contato extends DefaultEntity {
     @Column(length = 11)
     private String telefone;
 
+    // so no cadastro completo
     @Embedded
-    private Endereco endereco = new Endereco();
+    private Endereco endereco;
+
+    // cadastro completo = documento e endereco preenchidos; o simples tem nome, tipo e telefone
+    public boolean isCadastroCompleto() {
+        return documento != null && endereco != null;
+    }
 
     public Usuario getUsuario() {
         return usuario;
