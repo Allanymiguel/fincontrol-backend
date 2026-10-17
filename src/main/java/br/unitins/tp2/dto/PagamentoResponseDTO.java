@@ -10,8 +10,10 @@ import br.unitins.tp2.model.StatusPagamento;
 public record PagamentoResponseDTO(
     Long id,
     LocalDate dataPagamento,
+    Long idPlano,
     String nomePlano,
     Periodicidade periodicidade,
+    Long idCupom,
     String codigoCupom,
     BigDecimal valor,
     FormaPagamento formaPagamento,

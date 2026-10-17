@@ -12,8 +12,10 @@ public final class PagamentoResponseMapper {
         return new PagamentoResponseDTO(
                 pagamento.getId(),
                 pagamento.getDataPagamento(),
+                pagamento.getPlano().getId(),
                 pagamento.getPlano().getNome(),
                 pagamento.getPeriodicidade(),
+                pagamento.getCupom() == null ? null : pagamento.getCupom().getId(),
                 pagamento.getCupom() == null ? null : pagamento.getCupom().getCodigo(),
                 pagamento.getValor(),
                 pagamento.getFormaPagamento(),

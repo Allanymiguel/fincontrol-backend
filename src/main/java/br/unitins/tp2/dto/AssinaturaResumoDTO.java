@@ -14,7 +14,8 @@ public record AssinaturaResumoDTO(
     BigDecimal valor,
     // null no plano gratuito (nao ha cobranca)
     LocalDate dataProximaCobranca,
-    // plano que passa a valer na proxima cobranca; null se nao houver troca agendada
+    // plano que passa a valer na proxima cobranca; nulos se nao houver troca agendada
+    Long idPlanoAgendado,
     String nomePlanoAgendado
 ) {
 }

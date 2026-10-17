@@ -45,6 +45,7 @@ public final class AssinaturaResponseMapper {
                 assinatura.getProximoPlano().getId(),
                 assinatura.getProximoPlano().getNome(),
                 assinatura.getProximaPeriodicidade(),
+                cupom == null ? null : cupom.getId(),
                 cupom == null ? null : cupom.getCodigo(),
                 assinatura.getProximaFormaPagamento(),
                 assinatura.getProximoPlano().calcularValor(assinatura.getProximaPeriodicidade(), cupom),

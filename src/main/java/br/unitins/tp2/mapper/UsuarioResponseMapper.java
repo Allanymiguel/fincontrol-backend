@@ -41,6 +41,7 @@ public final class UsuarioResponseMapper {
                 assinatura.getPeriodicidade(),
                 assinatura.getValor(),
                 assinatura.getDataProximaCobranca(),
+                assinatura.isTrocaAgendada() ? assinatura.getProximoPlano().getId() : null,
                 assinatura.isTrocaAgendada() ? assinatura.getProximoPlano().getNome() : null);
     }
 }

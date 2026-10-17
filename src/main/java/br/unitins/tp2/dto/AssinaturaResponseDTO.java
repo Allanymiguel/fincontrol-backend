@@ -36,6 +36,7 @@ public record AssinaturaResponseDTO(
         Long idPlano,
         String nomePlano,
         Periodicidade periodicidade,
+        Long idCupom,
         String codigoCupom,
         FormaPagamento formaPagamento,
         // valor que sera cobrado na data, ja com o cupom
