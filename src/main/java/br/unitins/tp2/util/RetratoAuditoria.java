@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import br.unitins.tp2.model.Assinatura;
+import br.unitins.tp2.model.CepLocal;
 import br.unitins.tp2.model.Cupom;
 import br.unitins.tp2.model.Endereco;
 import br.unitins.tp2.model.FaixaIrpf;
@@ -101,6 +102,17 @@ public final class RetratoAuditoria {
                 ? assinatura.getProximoPlano().getNome() + " (" + assinatura.getProximaPeriodicidade().getNome() + ")"
                 : null);
         r.put("Observação", assinatura.getObservacao());
+        return r;
+    }
+
+    public static Map<String, String> de(CepLocal cep) {
+        Map<String, String> r = new LinkedHashMap<>();
+        r.put("CEP", cep.getCep());
+        r.put("Logradouro", cep.getLogradouro());
+        r.put("Bairro", cep.getBairro());
+        r.put("Município", cep.getMunicipio().getNome() + " - " + cep.getMunicipio().getEstado().getSigla());
+        r.put("Origem", cep.getOrigem().getNome());
+        r.put("Situação", cep.getSituacao().getNome());
         return r;
     }
 
