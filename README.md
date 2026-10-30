@@ -39,11 +39,11 @@ Usuários (senha = primeiro nome em minúsculas + `12345`, ex.: `carla12345`):
 | `admin@fincontrol.com` (`admin12345`) | ADMIN | ativo |
 | `beatriz@fincontrol.com` | ADMIN | ativo |
 | `joao@email.com` | USER | Empreendedor anual (MEI) |
-| `carla@email.com` | USER | Essencial mensal |
+| `carla@email.com` | USER | Essencial mensal (pagamento de 10/10 estornado) |
 | `bruno@email.com` | USER | Empreendedor, downgrade agendado |
 | `fernanda@email.com` | USER | Essencial anual, cancelamento agendado |
 | `luana@email.com` | USER | Essencial com cupom BLACKFRIDAY |
-| `marcos@email.com` | USER | Gratuito (cancelou em set/2026) |
+| `marcos@email.com` | USER | Empreendedor **pendente**: 2 de 3 cobranças recusadas (simulação ligada) |
 | `diego@email.com`, `patricia@email.com` | USER | Gratuito, cadastro simples (incompleto) |
 | `ana@email.com`, `rafael@email.com` | USER | **desativados** (Rafael ainda com plano pago) |
 
@@ -54,9 +54,16 @@ Usuários (senha = primeiro nome em minúsculas + `12345`, ex.: `carla12345`):
 | Painel (MRR, receita, receita em risco, assinantes, conversão) | `GET /admin/dashboard` |
 | Auditoria (somente leitura) | `GET /admin/auditoria`, `/filtros`, `/{id}` |
 | Usuários: filtros, CSV, linha do tempo, encerrar sessões | `GET /admin/usuarios`, `/exportacao`, `/{id}/linha-do-tempo`, `POST /{id}/sessoes/encerramento` |
-| Cobrança: disparo manual e histórico | `POST /admin/cobrancas/processar`, `GET /execucoes`, `/resumo`, `/dias-sem-execucao` |
+| Cobrança: disparo manual ("cobrar até" uma data) e histórico | `POST /admin/cobrancas/processar?data=`, `GET /execucoes`, `/resumo`, `/dias-sem-execucao` |
+| Pagamentos: lista com filtros, totais e estorno | `GET /admin/pagamentos`, `/resumo`, `POST /{id}/estorno` |
+| Simulação de recusa da cobrança (sem gateway) | `PATCH /admin/usuarios/{id}/assinatura/simulacao-recusa` |
 | Base de CEPs de clientes | `GET/PUT /admin/ceps`, `/verificacao`, `/revalidacao`, `/importacao`, `/configuracao`, `/consultas` |
 | Endereço do cadastro de cliente (público) | `GET /enderecos-cliente/cep/{cep}`, `/municipios`, `/sugestoes` |
+
+Pagamento simulado (RN15): com a simulação de recusa ligada, a cobrança grava o pagamento como recusado, a
+assinatura fica **pendente** com o plano atual e o período parado, e a cobrança seguinte tenta de novo; na 3ª
+recusa seguida volta ao Gratuito. Cada tentativa vai para o histórico da assinatura e para a linha do tempo.
+O **estorno** só mexe no registro financeiro: a receita do mês do estorno diminui, a assinatura não muda.
 
 Toda listagem é paginada: o corpo traz o `PageResponse` e a resposta repete a paginação nos headers
 `X-Page`, `X-Page-Size` e `X-Total-Count`. As fórmulas dos indicadores estão no Swagger.
