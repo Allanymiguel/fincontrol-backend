@@ -36,9 +36,17 @@ insert into plano (nome, precoMensal, precoAnual, limiteTransacoes, limiteMetas,
 insert into plano (nome, precoMensal, precoAnual, limiteTransacoes, limiteMetas, liberaRecorrencias, liberaFiscal, liberaExportacao, ativo) values('Empreendedor', 39.90, 399.00, 10000, 50, true, true, true, true);
 insert into plano (nome, precoMensal, precoAnual, limiteTransacoes, limiteMetas, liberaRecorrencias, liberaFiscal, liberaExportacao, ativo) values('Gratuito', 0.00, 0.00, 50, 1, false, false, false, true);
 
-insert into cupom (codigo, percentualDesconto, validade, ativo) values('BEMVINDO10', 10.00, '2026-12-31', true);
-insert into cupom (codigo, percentualDesconto, validade, ativo) values('BLACKFRIDAY', 30.00, '2026-11-30', true);
-insert into cupom (codigo, percentualDesconto, validade, ativo) values('LANCAMENTO', 50.00, '2026-03-31', false);
+-- cupons: limiteUsos nulo = sem limite; sem linha em cupom_plano = vale para todos os planos.
+-- Uso = adesao (assinatura com o cupom vigente, agendado ou ja pago com ele).
+-- ids: 1 BEMVINDO10 (sem limite, todos), 2 BLACKFRIDAY (100 usos, Essencial e Empreendedor),
+-- 3 LANCAMENTO (inativo), 4 PARCEIRO (1 uso, so Empreendedor, ainda nao usado)
+insert into cupom (codigo, percentualDesconto, validade, ativo, limiteUsos) values('BEMVINDO10', 10.00, '2026-12-31', true, null);
+insert into cupom (codigo, percentualDesconto, validade, ativo, limiteUsos) values('BLACKFRIDAY', 30.00, '2026-11-30', true, 100);
+insert into cupom (codigo, percentualDesconto, validade, ativo, limiteUsos) values('LANCAMENTO', 50.00, '2026-03-31', false, null);
+insert into cupom (codigo, percentualDesconto, validade, ativo, limiteUsos) values('PARCEIRO', 20.00, '2026-12-31', true, 1);
+insert into cupom_plano (cupom_id, plano_id) values(2, 1);
+insert into cupom_plano (cupom_id, plano_id) values(2, 2);
+insert into cupom_plano (cupom_id, plano_id) values(4, 2);
 
 -- =========================================================================
 -- dados operacionais do Joao (usuario_id = 2): categorias, transacoes, contatos.
@@ -59,7 +67,7 @@ insert into contato (usuario_id, nome, tipo, documento, email, telefone, cep, lo
 
 -- =========================================================================
 -- assinaturas: uma por usuario (RN16); o historico do que foi cobrado fica em pagamento.
--- Planos: 1 = Essencial, 2 = Empreendedor, 3 = Gratuito; cupons: 1 = BEMVINDO10, 2 = BLACKFRIDAY.
+-- Planos: 1 = Essencial, 2 = Empreendedor, 3 = Gratuito; cupons: 1 = BEMVINDO10, 2 = BLACKFRIDAY, 4 = PARCEIRO.
 -- Periodicidade 1 = mensal, 2 = anual; forma 1 = Pix, 2 = cartao, 3 = boleto, 4 = nenhuma. O admin nao tem assinatura.
 -- ids: 1 Joao, 2 Ana, 3 Carla, 4 Bruno, 5 Fernanda, 6 Diego, 7 Patricia, 8 Rafael, 9 Luana, 10 Marcos
 -- - Joao: Essencial mensal de ago/2025 a jan/2026, depois Empreendedor anual com BEMVINDO10 (399,00 - 10% = 359,10).
@@ -87,13 +95,14 @@ insert into assinatura (usuario_id, plano_id, cupom_id, periodicidade, formaPaga
 
 -- pagamentos (simulados, RN15): plano, periodicidade e cupom copiados do momento da cobranca.
 -- status: 2 aprovado, 3 recusado, 4 estornado. ids na ordem de insercao (o 21, da Carla, foi estornado).
+-- valorDesconto = preco cheio - valor cobrado (zero sem cupom).
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 1, 1, null, 19.90, 2, 2, '2025-08-01');
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 1, 1, null, 19.90, 2, 2, '2025-09-01');
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 1, 1, null, 19.90, 2, 2, '2025-10-01');
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 1, 1, null, 19.90, 2, 2, '2025-11-01');
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 1, 1, null, 19.90, 2, 2, '2025-12-01');
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 1, 1, null, 19.90, 2, 2, '2026-01-01');
-insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(1, 2, 2, 1, 359.10, 1, 2, '2026-02-01');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, valorDesconto, formaPagamento, status, dataPagamento) values(1, 2, 2, 1, 359.10, 39.90, 1, 2, '2026-02-01');
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(2, 1, 1, null, 19.90, 3, 2, '2025-03-01');
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(2, 1, 1, null, 19.90, 3, 2, '2025-04-01');
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(2, 1, 1, null, 19.90, 3, 2, '2025-05-01');
@@ -120,7 +129,7 @@ insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, 
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(8, 2, 1, null, 39.90, 1, 2, '2026-08-01');
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(8, 2, 1, null, 39.90, 1, 2, '2026-09-01');
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(8, 2, 1, null, 39.90, 1, 2, '2026-10-01');
-insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(9, 1, 1, 2, 13.93, 1, 2, '2026-10-02');
+insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, valorDesconto, formaPagamento, status, dataPagamento) values(9, 1, 1, 2, 13.93, 5.97, 1, 2, '2026-10-02');
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(10, 1, 1, null, 19.90, 2, 2, '2026-07-01');
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(10, 1, 1, null, 19.90, 2, 2, '2026-08-01');
 insert into pagamento (assinatura_id, plano_id, periodicidade, cupom_id, valor, formaPagamento, status, dataPagamento) values(10, 2, 1, null, 39.90, 2, 2, '2026-09-29');
@@ -179,7 +188,7 @@ insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, a
 insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, acao, tipoAlvo, idAlvo, descricaoAlvo, alteracoes, dataCadastro) values('2026-08-15 12:00:00', '0f1c2a3b-0000-4000-8000-000000000012', 'Beatriz Nunes', 'beatriz@fincontrol.com', 7, 2, 11, 'Marcos Teixeira (marcos@email.com)', '[{"campo":"Troca agendada","antes":null,"depois":"Gratuito (Mensal)","oculto":false}]', '2026-08-15 12:00:00');
 insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, acao, tipoAlvo, idAlvo, descricaoAlvo, alteracoes, dataCadastro) values('2026-09-28 15:40:00', '0f1c2a3b-0000-4000-8000-000000000012', 'Beatriz Nunes', 'beatriz@fincontrol.com', 2, 1, 4, 'Carla Mendes (carla@email.com)', '[{"campo":"Telefone","antes":null,"depois":null,"oculto":true},{"campo":"Complemento","antes":"Apto 301","depois":"Apto 302","oculto":false}]', '2026-09-28 15:40:00');
 insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, acao, tipoAlvo, idAlvo, descricaoAlvo, alteracoes, dataCadastro) values('2026-09-29 15:20:00', '0f1c2a3b-0000-4000-8000-000000000012', 'Beatriz Nunes', 'beatriz@fincontrol.com', 5, 2, 11, 'Marcos Teixeira (marcos@email.com)', '[{"campo":"Plano","antes":"Gratuito","depois":"Empreendedor","oculto":false},{"campo":"Forma de pagamento","antes":"Nenhuma","depois":"Cartão","oculto":false},{"campo":"Valor da cobrança","antes":"0,00","depois":"39,90","oculto":false},{"campo":"Próxima cobrança","antes":null,"depois":"29/10/2026","oculto":false}]', '2026-09-29 15:20:00');
-insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, acao, tipoAlvo, idAlvo, descricaoAlvo, alteracoes, dataCadastro) values('2026-10-01 09:00:00', '0f1c2a3b-0000-4000-8000-000000000001', 'Administrador', 'admin@fincontrol.com', 12, 4, 2, 'BLACKFRIDAY', '[{"campo":"Código","antes":null,"depois":"BLACKFRIDAY","oculto":false},{"campo":"Desconto (%)","antes":null,"depois":"30,00","oculto":false},{"campo":"Validade","antes":null,"depois":"30/11/2026","oculto":false},{"campo":"Ativo","antes":null,"depois":"Sim","oculto":false}]', '2026-10-01 09:00:00');
+insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, acao, tipoAlvo, idAlvo, descricaoAlvo, alteracoes, dataCadastro) values('2026-10-01 09:00:00', '0f1c2a3b-0000-4000-8000-000000000001', 'Administrador', 'admin@fincontrol.com', 12, 4, 2, 'BLACKFRIDAY', '[{"campo":"Código","antes":null,"depois":"BLACKFRIDAY","oculto":false},{"campo":"Desconto (%)","antes":null,"depois":"30,00","oculto":false},{"campo":"Validade","antes":null,"depois":"30/11/2026","oculto":false},{"campo":"Ativo","antes":null,"depois":"Sim","oculto":false},{"campo":"Limite de usos","antes":null,"depois":"100","oculto":false},{"campo":"Planos","antes":null,"depois":"Essencial, Empreendedor","oculto":false}]', '2026-10-01 09:00:00');
 insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, acao, tipoAlvo, idAlvo, descricaoAlvo, alteracoes, dataCadastro) values('2026-10-02 11:35:00', '0f1c2a3b-0000-4000-8000-000000000012', 'Beatriz Nunes', 'beatriz@fincontrol.com', 5, 2, 10, 'Luana Martins (luana@email.com)', '[{"campo":"Plano","antes":"Gratuito","depois":"Essencial","oculto":false},{"campo":"Cupom","antes":null,"depois":"BLACKFRIDAY","oculto":false},{"campo":"Forma de pagamento","antes":"Nenhuma","depois":"Pix","oculto":false},{"campo":"Valor da cobrança","antes":"0,00","depois":"13,93","oculto":false},{"campo":"Próxima cobrança","antes":null,"depois":"02/11/2026","oculto":false}]', '2026-10-02 11:35:00');
 insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, acao, tipoAlvo, idAlvo, descricaoAlvo, alteracoes, dataCadastro) values('2026-10-12 17:45:00', '0f1c2a3b-0000-4000-8000-000000000001', 'Administrador', 'admin@fincontrol.com', 7, 2, 6, 'Fernanda Rocha (fernanda@email.com)', '[{"campo":"Troca agendada","antes":null,"depois":"Gratuito (Mensal)","oculto":false}]', '2026-10-12 17:45:00');
 insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, acao, tipoAlvo, idAlvo, descricaoAlvo, alteracoes, dataCadastro) values('2026-10-18 14:00:00', '0f1c2a3b-0000-4000-8000-000000000001', 'Administrador', 'admin@fincontrol.com', 4, 1, 9, 'Rafael Souza (rafael@email.com)', '[{"campo":"Ativo","antes":"Sim","depois":"Não","oculto":false}]', '2026-10-18 14:00:00');
@@ -187,6 +196,7 @@ insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, a
 insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, acao, tipoAlvo, idAlvo, descricaoAlvo, alteracoes, dataCadastro) values('2026-10-20 14:12:00', '0f1c2a3b-0000-4000-8000-000000000012', 'Beatriz Nunes', 'beatriz@fincontrol.com', 8, 2, 5, 'Bruno Costa (bruno@email.com)', '[{"campo":"Observação","antes":null,"depois":"Pediu para reduzir o plano a partir de novembro","oculto":false}]', '2026-10-20 14:12:00');
 insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, acao, tipoAlvo, idAlvo, descricaoAlvo, alteracoes, dataCadastro) values('2026-10-21 09:40:00', '0f1c2a3b-0000-4000-8000-000000000012', 'Beatriz Nunes', 'beatriz@fincontrol.com', 28, 10, 21, 'Pagamento #21 de Carla Mendes (carla@email.com)', '[{"campo":"Situação","antes":"Aprovado","depois":"Estornado","oculto":false},{"campo":"Motivo do estorno","antes":null,"depois":"Cortesia: o app ficou fora do ar em 18/10 (combinado com o suporte)","oculto":false}]', '2026-10-21 09:40:00');
 insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, acao, tipoAlvo, idAlvo, descricaoAlvo, alteracoes, dataCadastro) values('2026-10-22 10:30:00', '0f1c2a3b-0000-4000-8000-000000000001', 'Administrador', 'admin@fincontrol.com', 10, 3, 2, 'Empreendedor', '[{"campo":"Limite de metas","antes":"30","depois":"50","oculto":false}]', '2026-10-22 10:30:00');
+insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, acao, tipoAlvo, idAlvo, descricaoAlvo, alteracoes, dataCadastro) values('2026-10-27 10:00:00', '0f1c2a3b-0000-4000-8000-000000000012', 'Beatriz Nunes', 'beatriz@fincontrol.com', 12, 4, 4, 'PARCEIRO', '[{"campo":"Código","antes":null,"depois":"PARCEIRO","oculto":false},{"campo":"Desconto (%)","antes":null,"depois":"20,00","oculto":false},{"campo":"Validade","antes":null,"depois":"31/12/2026","oculto":false},{"campo":"Ativo","antes":null,"depois":"Sim","oculto":false},{"campo":"Limite de usos","antes":null,"depois":"1","oculto":false},{"campo":"Planos","antes":null,"depois":"Empreendedor","oculto":false}]', '2026-10-27 10:00:00');
 insert into EventoAuditoria (dataHora, adminKeycloakId, adminNome, adminEmail, acao, tipoAlvo, idAlvo, descricaoAlvo, alteracoes, dataCadastro) values('2026-10-28 16:05:00', '0f1c2a3b-0000-4000-8000-000000000001', 'Administrador', 'admin@fincontrol.com', 29, 2, 11, 'Marcos Teixeira (marcos@email.com)', '[{"campo":"Simulação de recusa","antes":"Desligada","depois":"Ligada","oculto":false}]', '2026-10-28 16:05:00');
 
 -- =========================================================================
