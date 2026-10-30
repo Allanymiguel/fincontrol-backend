@@ -8,7 +8,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 public enum StatusPagamento implements EnumComId {
     PENDENTE(1L, "Pendente"),
     APROVADO(2L, "Aprovado"),
-    RECUSADO(3L, "Recusado");
+    RECUSADO(3L, "Recusado"),
+    // devolvido pelo admin; a assinatura nao muda (so o registro financeiro)
+    ESTORNADO(4L, "Estornado");
 
     private final Long ID;
     private final String NOME;

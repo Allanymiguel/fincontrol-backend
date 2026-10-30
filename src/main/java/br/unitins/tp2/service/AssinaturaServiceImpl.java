@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import br.unitins.tp2.dto.ObservacaoAssinaturaDTO;
+import br.unitins.tp2.dto.SimulacaoRecusaDTO;
 import br.unitins.tp2.dto.TrocaPlanoDTO;
 import br.unitins.tp2.dto.TrocaPlanoResponseDTO;
 import br.unitins.tp2.exception.ResourceNotFoundException;
@@ -192,6 +193,24 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         return assinatura;
     }
 
+    // A cobranca (CobrancaServiceImpl) recusa enquanto estiver ligada. Ligar so faz sentido com uma
+    // cobranca pela frente; desligar sempre pode (a proxima tentativa passa).
+    @Override
+    @Transactional
+    public Assinatura definirSimulacaoRecusa(long idUsuario, SimulacaoRecusaDTO simulacao) {
+        Assinatura assinatura = buscarDoUsuario(idUsuario);
+        if (simulacao.ligada() && assinatura.getDataProximaCobranca() == null)
+            throw ValidationException.of("ligada", "Esta assinatura não tem cobrança (plano sem custo): "
+                    + "não há pagamento para recusar.");
+        if (simulacao.ligada().equals(assinatura.getSimularRecusa()))
+            return assinatura;
+
+        Map<String, String> antes = RetratoAuditoria.de(assinatura);
+        assinatura.setSimularRecusa(simulacao.ligada());
+        auditar(AcaoAuditoria.SIMULACAO_RECUSA, assinatura, antes);
+        return assinatura;
+    }
+
     // ===== calculo da troca (RN16) =====
 
     private Calculo calcular(Assinatura atual, Escolha nova, LocalDate hoje) {
@@ -369,7 +388,7 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         return mudanca;
     }
 
-    // plano Gratuito: sem cobranca, sem cupom e sem forma de pagamento
+    // plano Gratuito: sem cobranca, sem cupom e sem forma de pagamento (e sem recusa a simular)
     static void aplicarGratuito(Assinatura assinatura, Plano gratuito, LocalDate data) {
         assinatura.setPlano(gratuito);
         assinatura.setPeriodicidade(Periodicidade.MENSAL);
@@ -380,6 +399,9 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         assinatura.setDataProximaCobranca(null);
         assinatura.setValorPeriodo(ZERO);
         assinatura.limparTrocaAgendada();
+        assinatura.setStatus(StatusAssinatura.ATIVA);
+        assinatura.setTentativasRecusadas(0);
+        assinatura.setSimularRecusa(false);
     }
 
     Plano buscarGratuitoOuFalhar() {
@@ -404,6 +426,10 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         Assinatura assinatura = buscarDoUsuario(idUsuario);
         if (!assinatura.getUsuario().getAtivo())
             throw ValidationException.of("idUsuario", "Conta desativada não pode trocar de plano.");
+        // o periodo esta parado na cobranca recusada: trocar agora misturaria credito com divida
+        if (assinatura.getStatus() == StatusAssinatura.PENDENTE)
+            throw ValidationException.of("idPlano", "Há um pagamento recusado aguardando nova tentativa. "
+                    + "A troca de plano volta a ser possível quando a cobrança for aprovada.");
 
         return assinatura;
     }

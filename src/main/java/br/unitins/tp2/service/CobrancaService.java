@@ -11,7 +11,8 @@ import br.unitins.tp2.model.StatusExecucaoCobranca;
 
 public interface CobrancaService {
 
-    // Processa as cobrancas vencidas ate a data (inclusive); rodar de novo na mesma data nao duplica.
+    // Processa as cobrancas vencidas ate a data (inclusive); rodar de novo na mesma data nao cobra duas
+    // vezes (so a cobranca recusada ganha nova tentativa).
     // Cada assinatura vai na propria transacao (uma falha nao desfaz as outras) e a execucao e
     // registrada no historico mesmo se falhar. admin = quem disparou (nulo na automatica).
     CobrancaResponseDTO executar(LocalDate data, OrigemExecucaoCobranca origem, AuditoriaService.Admin admin);

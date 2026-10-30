@@ -21,9 +21,12 @@ import br.unitins.tp2.model.ExecucaoCobranca;
 import br.unitins.tp2.model.MudancaAssinatura;
 import br.unitins.tp2.model.OrigemExecucaoCobranca;
 import br.unitins.tp2.model.OrigemMudancaAssinatura;
+import br.unitins.tp2.model.Pagamento;
 import br.unitins.tp2.model.Periodicidade;
 import br.unitins.tp2.model.Plano;
+import br.unitins.tp2.model.StatusAssinatura;
 import br.unitins.tp2.model.StatusExecucaoCobranca;
+import br.unitins.tp2.model.StatusPagamento;
 import br.unitins.tp2.model.TipoMudancaAssinatura;
 import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.repository.ExecucaoCobrancaRepository;
@@ -42,6 +45,9 @@ import jakarta.inject.Inject;
 // 2. a troca agendada (plano mais barato ou cancelamento), se houver, passa a valer;
 // 3. plano sem custo: deixa de ter cobranca. Plano pago: registra o Pagamento (simulado e ja
 //    aprovado, RN15) e o periodo avanca um ciclo. Se varios ciclos venceram, cobra um por um.
+//    Com a simulacao de recusa ligada, o pagamento e RECUSADO: a assinatura fica PENDENTE com o
+//    plano atual, o periodo nao avanca e a proxima cobranca tenta de novo; na 3a recusa seguida
+//    volta ao Gratuito. Cada tentativa fica no historico da assinatura (MudancaAssinatura).
 // Cada assinatura vai na propria transacao: a que falhar vira um erro da execucao e as outras seguem.
 // Toda execucao (automatica ou manual) fica no historico, gravada ao final em transacao propria.
 @ApplicationScoped
@@ -67,7 +73,7 @@ public class CobrancaServiceImpl implements CobrancaService {
     ExecucaoCobrancaRepository execucaoRepository;
 
     // o que a cobranca fez numa assinatura
-    private record Resultado(int pagamentos, BigDecimal valor, int trocas, int gratuitos) {
+    private record Resultado(int pagamentos, BigDecimal valor, int trocas, int gratuitos, int recusados) {
     }
 
     @Scheduled(cron = "{fincontrol.cobranca.cron}", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
@@ -82,7 +88,7 @@ public class CobrancaServiceImpl implements CobrancaService {
     public CobrancaResponseDTO executar(LocalDate data, OrigemExecucaoCobranca origem, AuditoriaService.Admin admin) {
         LocalDateTime inicio = LocalDateTime.now();
         long relogio = System.nanoTime();
-        int assinaturas = 0, pagamentos = 0, trocas = 0, gratuitos = 0;
+        int assinaturas = 0, pagamentos = 0, trocas = 0, gratuitos = 0, recusados = 0;
         BigDecimal total = BigDecimal.ZERO.setScale(2);
         List<ExecucaoCobrancaResponseDTO.Erro> erros = new ArrayList<>();
         String falhaGeral = null;
@@ -97,6 +103,7 @@ public class CobrancaServiceImpl implements CobrancaService {
                     total = total.add(r.valor());
                     trocas += r.trocas();
                     gratuitos += r.gratuitos();
+                    recusados += r.recusados();
                 } catch (RuntimeException e) {
                     LOG.errorf(e, "Cobranca da assinatura %d falhou; as demais seguem", id);
                     erros.add(new ExecucaoCobrancaResponseDTO.Erro(id, usuarioDa(id), mensagem(e)));
@@ -123,17 +130,19 @@ public class CobrancaServiceImpl implements CobrancaService {
         execucao.setValorTotal(total);
         execucao.setTrocasAplicadas(trocas);
         execucao.setVoltasAoGratuito(gratuitos);
+        execucao.setPagamentosRecusados(recusados);
         execucao.setMensagemErro(falhaGeral);
         execucao.setErros(paraJson(erros));
         QuarkusTransaction.requiringNew().run(() -> execucaoRepository.persist(execucao));
 
-        return new CobrancaResponseDTO(data, assinaturas, pagamentos, total, trocas, gratuitos, execucao.getId(), status);
+        return new CobrancaResponseDTO(data, assinaturas, pagamentos, total, trocas, gratuitos, recusados,
+                execucao.getId(), status);
     }
 
     // uma assinatura, na transacao aberta por executar()
     private Resultado cobrar(Long id, LocalDate data) {
         Assinatura assinatura = assinaturaRepository.findById(id);
-        int pagamentos = 0, trocas = 0, gratuitos = 0;
+        int pagamentos = 0, trocas = 0, gratuitos = 0, recusados = 0;
         BigDecimal total = BigDecimal.ZERO.setScale(2);
 
         while (assinatura.getDataProximaCobranca() != null && !assinatura.getDataProximaCobranca().isAfter(data)) {
@@ -173,17 +182,65 @@ public class CobrancaServiceImpl implements CobrancaService {
                 assinatura.setDataInicioPeriodo(dia);
                 assinatura.setDataProximaCobranca(null);
                 assinatura.setValorPeriodo(valor);
+                regularizar(assinatura);
                 break;
             }
 
-            pagamentoRepository.persist(AssinaturaServiceImpl.novoPagamento(assinatura, dia));
+            // simulacao ligada no detalhe do usuario: esta tentativa e recusada e a proxima so na
+            // proxima cobranca (o periodo nao avanca)
+            if (Boolean.TRUE.equals(assinatura.getSimularRecusa())) {
+                recusados++;
+                gratuitos += registrarRecusa(assinatura, data) ? 1 : 0;
+                break;
+            }
+
+            // aprovado depois de recusas: o pagamento entra no dia em que passou; o periodo continua
+            // contado do vencimento
+            LocalDate dataPagamento = assinatura.getTentativasRecusadas() > 0 ? data : dia;
+            pagamentoRepository.persist(AssinaturaServiceImpl.novoPagamento(assinatura, dataPagamento));
             pagamentos++;
             total = total.add(valor);
             assinatura.setDataInicioPeriodo(dia);
             assinatura.setDataProximaCobranca(assinatura.getPeriodicidade().somarCiclo(dia));
             assinatura.setValorPeriodo(valor);
+            regularizar(assinatura);
         }
-        return new Resultado(pagamentos, total, trocas, gratuitos);
+        return new Resultado(pagamentos, total, trocas, gratuitos, recusados);
+    }
+
+    // Grava o pagamento RECUSADO e a tentativa no historico. Nas duas primeiras a assinatura fica
+    // PENDENTE com o plano atual; na 3a recusa seguida volta ao Gratuito. true = voltou ao Gratuito.
+    private boolean registrarRecusa(Assinatura assinatura, LocalDate data) {
+        Pagamento recusado = AssinaturaServiceImpl.novoPagamento(assinatura, data);
+        recusado.setStatus(StatusPagamento.RECUSADO);
+        pagamentoRepository.persist(recusado);
+
+        int tentativa = assinatura.getTentativasRecusadas() + 1;
+        MudancaAssinatura registro = AssinaturaServiceImpl.mudancaDoVigente(assinatura,
+                TipoMudancaAssinatura.PAGAMENTO_RECUSADO, OrigemMudancaAssinatura.COBRANCA, data);
+        registro.definirNovo(assinatura.getPlano(), assinatura.getPeriodicidade(), assinatura.getValor());
+        registro.setDetalhe(RegrasCobranca.detalheRecusa(tentativa, assinatura.getValor()));
+        mudancaRepository.persist(registro);
+
+        if (!RegrasCobranca.esgotouTentativas(tentativa)) {
+            assinatura.setStatus(StatusAssinatura.PENDENTE);
+            assinatura.setTentativasRecusadas(tentativa);
+            return false;
+        }
+
+        Plano gratuito = buscarGratuitoOuFalhar();
+        MudancaAssinatura volta = AssinaturaServiceImpl.mudancaDoVigente(assinatura,
+                TipoMudancaAssinatura.VOLTA_GRATUITO_RECUSAS, OrigemMudancaAssinatura.COBRANCA, data);
+        volta.definirNovo(gratuito, Periodicidade.MENSAL, BigDecimal.ZERO);
+        mudancaRepository.persist(volta);
+        AssinaturaServiceImpl.aplicarGratuito(assinatura, gratuito, data);
+        return true;
+    }
+
+    // pagamento em dia: sai do PENDENTE e zera as recusas
+    private static void regularizar(Assinatura assinatura) {
+        assinatura.setStatus(StatusAssinatura.ATIVA);
+        assinatura.setTentativasRecusadas(0);
     }
 
     @Override

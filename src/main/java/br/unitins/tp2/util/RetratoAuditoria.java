@@ -12,6 +12,7 @@ import br.unitins.tp2.model.CepLocal;
 import br.unitins.tp2.model.Cupom;
 import br.unitins.tp2.model.Endereco;
 import br.unitins.tp2.model.FaixaIrpf;
+import br.unitins.tp2.model.Pagamento;
 import br.unitins.tp2.model.ParametroFiscal;
 import br.unitins.tp2.model.Plano;
 import br.unitins.tp2.model.Usuario;
@@ -102,6 +103,19 @@ public final class RetratoAuditoria {
                 ? assinatura.getProximoPlano().getNome() + " (" + assinatura.getProximaPeriodicidade().getNome() + ")"
                 : null);
         r.put("Observação", assinatura.getObservacao());
+        r.put("Simulação de recusa", Boolean.TRUE.equals(assinatura.getSimularRecusa()) ? "Ligada" : "Desligada");
+        return r;
+    }
+
+    // so a cobranca e o estorno: o usuario fica na descricao do alvo
+    public static Map<String, String> de(Pagamento pagamento) {
+        Map<String, String> r = new LinkedHashMap<>();
+        r.put("Data do pagamento", data(pagamento.getDataPagamento()));
+        r.put("Plano", pagamento.getPlano().getNome() + " (" + pagamento.getPeriodicidade().getNome() + ")");
+        r.put("Valor", numero(pagamento.getValor()));
+        r.put("Forma de pagamento", pagamento.getFormaPagamento().getNome());
+        r.put("Situação", pagamento.getStatus().getNome());
+        r.put("Motivo do estorno", pagamento.getMotivoEstorno());
         return r;
     }
 
@@ -119,6 +133,11 @@ public final class RetratoAuditoria {
     // "Nome (e-mail)": como o usuario aparece na lista da auditoria (sem documento nem telefone)
     public static String descricao(Usuario usuario) {
         return usuario.getNome() + " (" + usuario.getEmail() + ")";
+    }
+
+    // inclui o "Nome (e-mail)" para a busca da auditoria achar o estorno pelo usuario
+    public static String descricao(Pagamento pagamento) {
+        return "Pagamento #" + pagamento.getId() + " de " + descricao(pagamento.getAssinatura().getUsuario());
     }
 
     public static String descricao(ParametroFiscal parametro) {

@@ -20,7 +20,10 @@ public enum TipoMudancaAssinatura implements EnumComId {
     DOWNGRADE_APLICADO(7L, "Downgrade aplicado"),
     CANCELAMENTO_APLICADO(8L, "Cancelamento aplicado"),
     // a cobranca devolveu ao Gratuito uma conta desativada
-    VOLTA_GRATUITO_CONTA_DESATIVADA(9L, "Volta ao Gratuito (conta desativada)");
+    VOLTA_GRATUITO_CONTA_DESATIVADA(9L, "Volta ao Gratuito (conta desativada)"),
+    // tentativa de cobranca recusada: a assinatura fica pendente e mantem o plano
+    PAGAMENTO_RECUSADO(10L, "Pagamento recusado"),
+    VOLTA_GRATUITO_RECUSAS(11L, "Volta ao Gratuito (3 recusas seguidas)");
 
     private final Long ID;
     private final String NOME;

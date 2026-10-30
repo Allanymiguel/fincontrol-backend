@@ -33,6 +33,7 @@ public final class ExecucaoCobrancaResponseMapper {
                 execucao.getValorTotal(),
                 execucao.getTrocasAplicadas(),
                 execucao.getVoltasAoGratuito(),
+                execucao.getPagamentosRecusados(),
                 execucao.getMensagemErro(),
                 erros(execucao.getErros()));
     }

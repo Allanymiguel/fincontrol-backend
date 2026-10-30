@@ -3,6 +3,8 @@ package br.unitins.tp2.model;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import org.hibernate.annotations.ColumnDefault;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -72,6 +74,33 @@ public class Assinatura extends DefaultEntity {
 
     @Column(length = 255)
     private String observacao;
+
+    // simulacao de pagamento recusado (sem gateway real, RN15): enquanto ligada pelo admin, cada
+    // tentativa da cobranca e recusada. Os defaults cobrem as linhas do seed.
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    private Boolean simularRecusa = false;
+
+    // recusas seguidas da cobranca vencida (status PENDENTE); na 3a a assinatura volta ao Gratuito
+    @Column(nullable = false)
+    @ColumnDefault("0")
+    private Integer tentativasRecusadas = 0;
+
+    public Boolean getSimularRecusa() {
+        return simularRecusa;
+    }
+
+    public void setSimularRecusa(Boolean simularRecusa) {
+        this.simularRecusa = simularRecusa;
+    }
+
+    public Integer getTentativasRecusadas() {
+        return tentativasRecusadas;
+    }
+
+    public void setTentativasRecusadas(Integer tentativasRecusadas) {
+        this.tentativasRecusadas = tentativasRecusadas;
+    }
 
     public boolean isTrocaAgendada() {
         return proximoPlano != null;

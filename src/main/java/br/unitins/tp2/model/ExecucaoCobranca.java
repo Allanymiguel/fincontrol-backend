@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Immutable;
 
 import jakarta.persistence.Column;
@@ -59,6 +60,11 @@ public class ExecucaoCobranca extends DefaultEntity {
 
     @Column(nullable = false)
     private Integer voltasAoGratuito;
+
+    // tentativas recusadas (simulacao): nao sao erro da execucao. O default cobre as linhas do seed
+    @Column(nullable = false)
+    @ColumnDefault("0")
+    private Integer pagamentosRecusados = 0;
 
     // falha da execucao inteira (ex.: banco fora do ar); nulo se ela terminou
     @Column(length = 500)
@@ -170,6 +176,14 @@ public class ExecucaoCobranca extends DefaultEntity {
 
     public void setVoltasAoGratuito(Integer voltasAoGratuito) {
         this.voltasAoGratuito = voltasAoGratuito;
+    }
+
+    public Integer getPagamentosRecusados() {
+        return pagamentosRecusados;
+    }
+
+    public void setPagamentosRecusados(Integer pagamentosRecusados) {
+        this.pagamentosRecusados = pagamentosRecusados;
     }
 
     public String getMensagemErro() {

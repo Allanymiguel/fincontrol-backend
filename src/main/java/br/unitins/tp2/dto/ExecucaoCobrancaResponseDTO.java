@@ -22,6 +22,7 @@ public record ExecucaoCobrancaResponseDTO(
     BigDecimal valorTotal,
     int trocasAplicadas,
     int voltasAoGratuito,
+    int pagamentosRecusados,
     String mensagemErro,
     List<Erro> erros
 ) {

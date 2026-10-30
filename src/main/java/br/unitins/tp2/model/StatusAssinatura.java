@@ -6,8 +6,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum StatusAssinatura implements EnumComId {
-    // aguardando pagamento (RN15: pagamento aprovado -> ATIVA). Reservado para um pagamento real:
-    // com a cobranca simulada, toda assinatura fica ATIVA.
+    // pagamento recusado aguardando nova tentativa: o plano continua valendo ate a 3a recusa
+    // seguida, quando volta ao Gratuito (ATIVA). So acontece com a simulacao de recusa ligada.
     PENDENTE(1L, "Pendente"),
     ATIVA(2L, "Ativa"),
     CANCELADA(3L, "Cancelada");

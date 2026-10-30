@@ -29,7 +29,10 @@ public record AssinaturaResponseDTO(
     LocalDate dataProximaCobranca,
     // null se nao houver troca agendada para a proxima cobranca
     TrocaAgendada trocaAgendada,
-    String observacao
+    String observacao,
+    // simulacao de recusa ligada pelo admin e recusas seguidas da cobranca vencida (status PENDENTE)
+    boolean simularRecusa,
+    int tentativasRecusadas
 ) {
 
     public record TrocaAgendada(

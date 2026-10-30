@@ -33,7 +33,9 @@ public final class AssinaturaResponseMapper {
                 assinatura.getDataInicioPeriodo(),
                 assinatura.getDataProximaCobranca(),
                 toTrocaAgendada(assinatura),
-                assinatura.getObservacao());
+                assinatura.getObservacao(),
+                Boolean.TRUE.equals(assinatura.getSimularRecusa()),
+                assinatura.getTentativasRecusadas() == null ? 0 : assinatura.getTentativasRecusadas());
     }
 
     private static AssinaturaResponseDTO.TrocaAgendada toTrocaAgendada(Assinatura assinatura) {

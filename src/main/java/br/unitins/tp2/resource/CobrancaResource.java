@@ -63,6 +63,7 @@ public class CobrancaResource {
         resumo.put("Situação", resultado.status().getNome());
         resumo.put("Assinaturas processadas", String.valueOf(resultado.assinaturasProcessadas()));
         resumo.put("Pagamentos gerados", String.valueOf(resultado.pagamentosGerados()));
+        resumo.put("Pagamentos recusados", String.valueOf(resultado.pagamentosRecusados()));
         resumo.put("Valor total", resultado.valorTotal().toPlainString().replace('.', ','));
         auditoria.registrar(AcaoAuditoria.COBRANCA_MANUAL, TipoAlvoAuditoria.COBRANCA, resultado.idExecucao(),
                 "Cobrança até " + resultado.data().format(DATA_BR), Map.of(), resumo);

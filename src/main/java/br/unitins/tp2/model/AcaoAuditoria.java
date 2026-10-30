@@ -33,7 +33,9 @@ public enum AcaoAuditoria implements EnumComId {
     IMPORTACAO_CEP(24L, "Importação de CEPs"),
     ALTERACAO_API_CEP(25L, "Consulta externa de CEP ligada/desligada"),
     COBRANCA_MANUAL(26L, "Cobrança disparada manualmente"),
-    ENCERRAMENTO_SESSOES(27L, "Sessões encerradas");
+    ENCERRAMENTO_SESSOES(27L, "Sessões encerradas"),
+    ESTORNO_PAGAMENTO(28L, "Estorno de pagamento"),
+    SIMULACAO_RECUSA(29L, "Simulação de recusa de pagamento");
 
     private final Long ID;
     private final String NOME;

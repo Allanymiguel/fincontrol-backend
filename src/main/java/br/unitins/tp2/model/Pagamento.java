@@ -2,6 +2,7 @@ package br.unitins.tp2.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,6 +41,39 @@ public class Pagamento extends DefaultEntity {
 
     @Column(nullable = false)
     private LocalDate dataPagamento;
+
+    // estorno pelo admin: quando, por que e quem (copiado do token); nulos se nao foi estornado
+    private LocalDateTime dataEstorno;
+
+    @Column(length = 255)
+    private String motivoEstorno;
+
+    @Column(length = 160)
+    private String estornadoPor;
+
+    public LocalDateTime getDataEstorno() {
+        return dataEstorno;
+    }
+
+    public void setDataEstorno(LocalDateTime dataEstorno) {
+        this.dataEstorno = dataEstorno;
+    }
+
+    public String getMotivoEstorno() {
+        return motivoEstorno;
+    }
+
+    public void setMotivoEstorno(String motivoEstorno) {
+        this.motivoEstorno = motivoEstorno;
+    }
+
+    public String getEstornadoPor() {
+        return estornadoPor;
+    }
+
+    public void setEstornadoPor(String estornadoPor) {
+        this.estornadoPor = estornadoPor;
+    }
 
     public Assinatura getAssinatura() {
         return assinatura;

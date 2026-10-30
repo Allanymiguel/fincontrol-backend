@@ -2,6 +2,7 @@ package br.unitins.tp2.resource;
 
 import br.unitins.tp2.dto.AssinaturaResponseDTO;
 import br.unitins.tp2.dto.ObservacaoAssinaturaDTO;
+import br.unitins.tp2.dto.SimulacaoRecusaDTO;
 import br.unitins.tp2.dto.TrocaPlanoDTO;
 import br.unitins.tp2.dto.TrocaPlanoResponseDTO;
 import br.unitins.tp2.mapper.AssinaturaResponseMapper;
@@ -66,5 +67,13 @@ public class AssinaturaAdminResource {
     public AssinaturaResponseDTO salvarObservacao(@PathParam("idUsuario") Long idUsuario,
             ObservacaoAssinaturaDTO observacao) {
         return AssinaturaResponseMapper.toResponse(service.salvarObservacao(idUsuario, observacao));
+    }
+
+    // sem gateway real (RN15): enquanto ligada, cada tentativa da cobranca desta assinatura e recusada
+    @PATCH
+    @Path("/simulacao-recusa")
+    public AssinaturaResponseDTO definirSimulacaoRecusa(@PathParam("idUsuario") Long idUsuario,
+            SimulacaoRecusaDTO simulacao) {
+        return AssinaturaResponseMapper.toResponse(service.definirSimulacaoRecusa(idUsuario, simulacao));
     }
 }

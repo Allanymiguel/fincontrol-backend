@@ -16,6 +16,8 @@ public record CobrancaResponseDTO(
     int trocasAplicadas,
     // assinaturas que voltaram ao Gratuito (cancelamento ou conta desativada)
     int voltasAoGratuito,
+    // tentativas recusadas (simulacao de recusa ligada no detalhe do usuario)
+    int pagamentosRecusados,
     // execucao registrada no historico e como ela terminou
     Long idExecucao,
     StatusExecucaoCobranca status

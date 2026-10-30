@@ -1,6 +1,7 @@
 package br.unitins.tp2.service;
 
 import br.unitins.tp2.dto.ObservacaoAssinaturaDTO;
+import br.unitins.tp2.dto.SimulacaoRecusaDTO;
 import br.unitins.tp2.dto.TrocaPlanoDTO;
 import br.unitins.tp2.dto.TrocaPlanoResponseDTO;
 import br.unitins.tp2.model.Assinatura;
@@ -20,4 +21,6 @@ public interface AssinaturaService {
     TrocaPlanoResponseDTO cancelarPlanoPago(long idUsuario);
     Assinatura desfazerTroca(long idUsuario);
     Assinatura salvarObservacao(long idUsuario, @Valid ObservacaoAssinaturaDTO observacao);
+    // liga/desliga a recusa simulada das proximas cobrancas (sem gateway real, RN15)
+    Assinatura definirSimulacaoRecusa(long idUsuario, @Valid SimulacaoRecusaDTO simulacao);
 }

@@ -77,6 +77,7 @@ class EnumIdConverterTest {
         CODIGOS.put(StatusPagamento.PENDENTE, 1);
         CODIGOS.put(StatusPagamento.APROVADO, 2);
         CODIGOS.put(StatusPagamento.RECUSADO, 3);
+        CODIGOS.put(StatusPagamento.ESTORNADO, 4);
         CODIGOS.put(TipoContato.CLIENTE, 1);
         CODIGOS.put(TipoContato.FORNECEDOR, 2);
         CODIGOS.put(TipoTransacao.RECEITA, 1);
@@ -90,6 +91,8 @@ class EnumIdConverterTest {
         CODIGOS.put(TipoMudancaAssinatura.DOWNGRADE_APLICADO, 7);
         CODIGOS.put(TipoMudancaAssinatura.CANCELAMENTO_APLICADO, 8);
         CODIGOS.put(TipoMudancaAssinatura.VOLTA_GRATUITO_CONTA_DESATIVADA, 9);
+        CODIGOS.put(TipoMudancaAssinatura.PAGAMENTO_RECUSADO, 10);
+        CODIGOS.put(TipoMudancaAssinatura.VOLTA_GRATUITO_RECUSAS, 11);
         CODIGOS.put(OrigemMudancaAssinatura.CADASTRO, 1);
         CODIGOS.put(OrigemMudancaAssinatura.ADMIN, 2);
         CODIGOS.put(OrigemMudancaAssinatura.COBRANCA, 3);
@@ -102,7 +105,8 @@ class EnumIdConverterTest {
                 AcaoAuditoria.EXCLUSAO_PARAMETRO_FISCAL, AcaoAuditoria.CRIACAO_FAIXA_IRPF,
                 AcaoAuditoria.ALTERACAO_FAIXA_IRPF, AcaoAuditoria.EXCLUSAO_FAIXA_IRPF, AcaoAuditoria.CORRECAO_CEP,
                 AcaoAuditoria.VERIFICACAO_CEP, AcaoAuditoria.REVALIDACAO_CEP, AcaoAuditoria.IMPORTACAO_CEP,
-                AcaoAuditoria.ALTERACAO_API_CEP, AcaoAuditoria.COBRANCA_MANUAL, AcaoAuditoria.ENCERRAMENTO_SESSOES };
+                AcaoAuditoria.ALTERACAO_API_CEP, AcaoAuditoria.COBRANCA_MANUAL, AcaoAuditoria.ENCERRAMENTO_SESSOES,
+                AcaoAuditoria.ESTORNO_PAGAMENTO, AcaoAuditoria.SIMULACAO_RECUSA };
         for (int i = 0; i < acoes.length; i++)
             CODIGOS.put(acoes[i], i + 1);
         CODIGOS.put(TipoAlvoAuditoria.USUARIO, 1);
@@ -114,6 +118,7 @@ class EnumIdConverterTest {
         CODIGOS.put(TipoAlvoAuditoria.CEP, 7);
         CODIGOS.put(TipoAlvoAuditoria.CONFIGURACAO, 8);
         CODIGOS.put(TipoAlvoAuditoria.COBRANCA, 9);
+        CODIGOS.put(TipoAlvoAuditoria.PAGAMENTO, 10);
         CODIGOS.put(OrigemExecucaoCobranca.AUTOMATICA, 1);
         CODIGOS.put(OrigemExecucaoCobranca.MANUAL, 2);
         CODIGOS.put(StatusExecucaoCobranca.SUCESSO, 1);
