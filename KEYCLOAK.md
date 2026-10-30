@@ -28,8 +28,19 @@ Depois suba o back (`./mvnw quarkus:dev`) e o front (`ng serve`) normalmente.
 | E-mail | Senha | Roles | Situação |
 |---|---|---|---|
 | `admin@fincontrol.com` | `admin12345` | ADMIN | ativo (só a área administrativa) |
+| `beatriz@fincontrol.com` | `beatriz12345` | ADMIN | ativo (segunda administradora, para o filtro da auditoria) |
 | `joao@email.com` | `joao12345` | USER | ativo (MEI) |
-| `ana@email.com` | `ana12345` | USER | **desativada** (o login é recusado) |
+| `carla@`, `bruno@`, `fernanda@`, `diego@`, `patricia@`, `luana@`, `marcos@email.com` | primeiro nome + `12345` | USER | ativos |
+| `ana@email.com`, `rafael@email.com` | primeiro nome + `12345` | USER | **desativados** (o login é recusado) |
+
+### Desativar e encerrar sessões
+
+O back valida o JWT sozinho, mas a cada requisição também confere o perfil local (`ContaAtivaAugmentor`):
+
+- **Conta desativada** perde o acesso na hora (401 "Conta desativada"), sem esperar o token expirar.
+- **Encerrar sessões** (resumo do usuário) chama `POST /users/{id}/logout` no Keycloak e guarda os ids das
+  sessões encerradas (claim `sid`). Um token dessas sessões recebe 401; um login novo funciona normalmente.
+  A comparação é por id, e não por horário, porque o relógio do container pode ficar alguns segundos à frente.
 
 Os ids desses usuários no realm são os mesmos de `Usuario.keycloakId` no `import.sql`, então o perfil local e a conta do Keycloak já nascem ligados. Contas novas são criadas pela tela **Criar conta** (`POST /auth/registro/simples` ou `/completo`), sempre com a role `USER`, ou pelo admin em **Usuários** (`POST /admin/usuarios/simples` ou `/completo`), com a role `USER` ou `ADMIN`.
 
