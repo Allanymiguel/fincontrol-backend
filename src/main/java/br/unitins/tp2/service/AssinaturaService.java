@@ -17,7 +17,7 @@ public interface AssinaturaService {
     // RN16: troca no estilo da Netflix (mais caro vale na hora, mais barato na proxima cobranca)
     TrocaPlanoResponseDTO simularTroca(long idUsuario, @Valid TrocaPlanoDTO troca);
     TrocaPlanoResponseDTO trocarPlano(long idUsuario, @Valid TrocaPlanoDTO troca);
-    // agenda a volta ao Gratuito na proxima cobranca
+    // agenda a volta ao Gratuito na proxima cobranca (com cobranca recusada pendente, volta na hora)
     TrocaPlanoResponseDTO cancelarPlanoPago(long idUsuario);
     Assinatura desfazerTroca(long idUsuario);
     Assinatura salvarObservacao(long idUsuario, @Valid ObservacaoAssinaturaDTO observacao);

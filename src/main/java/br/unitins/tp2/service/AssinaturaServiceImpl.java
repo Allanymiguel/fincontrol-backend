@@ -150,11 +150,13 @@ public class AssinaturaServiceImpl implements AssinaturaService {
     @Override
     @Transactional
     public TrocaPlanoResponseDTO cancelarPlanoPago(long idUsuario) {
-        Assinatura assinatura = buscarParaTrocaOuFalhar(idUsuario);
+        Assinatura assinatura = buscarDeContaAtivaOuFalhar(idUsuario);
         Plano gratuito = buscarGratuitoOuFalhar();
 
         if (assinatura.getDataProximaCobranca() == null)
             throw ValidationException.of("idPlano", "O usuário já está no plano Gratuito.");
+        if (assinatura.getStatus() == StatusAssinatura.PENDENTE)
+            return cancelarComRecusaPendente(assinatura, gratuito);
         if (assinatura.isTrocaAgendada() && assinatura.getProximoPlano().getId().equals(gratuito.getId()))
             throw ValidationException.of("idPlano", "A volta ao plano Gratuito já está agendada.");
 
@@ -165,6 +167,22 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         auditar(AcaoAuditoria.CANCELAMENTO_PLANO, assinatura, antes);
 
         return toResponse(calculo, assinatura);
+    }
+
+    // Com cobranca recusada pendente nao ha periodo pago a esperar: volta ao Gratuito na hora e a
+    // cobranca recusada deixa de ser tentada.
+    private TrocaPlanoResponseDTO cancelarComRecusaPendente(Assinatura assinatura, Plano gratuito) {
+        LocalDate hoje = LocalDate.now();
+        Map<String, String> antes = RetratoAuditoria.de(assinatura);
+        MudancaAssinatura mudanca = mudancaDoVigente(assinatura, TipoMudancaAssinatura.CANCELAMENTO_APLICADO,
+                OrigemMudancaAssinatura.ADMIN, hoje);
+        mudanca.definirNovo(gratuito, Periodicidade.MENSAL, ZERO);
+        mudanca.setDetalhe("Cancelado com pagamento recusado pendente: volta ao Gratuito na hora, sem nova tentativa.");
+        mudancaRepository.persist(mudanca);
+        aplicarGratuito(assinatura, gratuito, hoje);
+        auditar(AcaoAuditoria.CANCELAMENTO_PLANO, assinatura, antes);
+
+        return toResponse(new Calculo(EfeitoTroca.IMEDIATO, ZERO, 0, ZERO, null, ZERO), assinatura);
     }
 
     @Override
@@ -422,14 +440,20 @@ public class AssinaturaServiceImpl implements AssinaturaService {
 
     // ===== validacoes =====
 
-    private Assinatura buscarParaTrocaOuFalhar(long idUsuario) {
+    private Assinatura buscarDeContaAtivaOuFalhar(long idUsuario) {
         Assinatura assinatura = buscarDoUsuario(idUsuario);
         if (!assinatura.getUsuario().getAtivo())
             throw ValidationException.of("idUsuario", "Conta desativada não pode trocar de plano.");
-        // o periodo esta parado na cobranca recusada: trocar agora misturaria credito com divida
+        return assinatura;
+    }
+
+    // o periodo esta parado na cobranca recusada: trocar agora misturaria credito com divida
+    // (cancelar continua possivel: volta ao Gratuito na hora)
+    private Assinatura buscarParaTrocaOuFalhar(long idUsuario) {
+        Assinatura assinatura = buscarDeContaAtivaOuFalhar(idUsuario);
         if (assinatura.getStatus() == StatusAssinatura.PENDENTE)
             throw ValidationException.of("idPlano", "Há um pagamento recusado aguardando nova tentativa. "
-                    + "A troca de plano volta a ser possível quando a cobrança for aprovada.");
+                    + "A troca de plano volta a ser possível quando a cobrança for aprovada (ou cancele o plano pago).");
 
         return assinatura;
     }

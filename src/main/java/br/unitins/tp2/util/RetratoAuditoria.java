@@ -103,6 +103,7 @@ public final class RetratoAuditoria {
                 ? assinatura.getProximoPlano().getNome() + " (" + assinatura.getProximaPeriodicidade().getNome() + ")"
                 : null);
         r.put("Observação", assinatura.getObservacao());
+        r.put("Situação", assinatura.getStatus().getNome());
         r.put("Simulação de recusa", Boolean.TRUE.equals(assinatura.getSimularRecusa()) ? "Ligada" : "Desligada");
         return r;
     }

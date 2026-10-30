@@ -55,7 +55,7 @@ public class AssinaturaAdminResource {
         return AssinaturaResponseMapper.toResponse(service.desfazerTroca(idUsuario));
     }
 
-    // cancelar o plano pago = voltar ao Gratuito na proxima cobranca
+    // cancelar o plano pago = voltar ao Gratuito na proxima cobranca (ou na hora, se ha cobranca recusada pendente)
     @POST
     @Path("/cancelamento")
     public TrocaPlanoResponseDTO cancelarPlanoPago(@PathParam("idUsuario") Long idUsuario) {
