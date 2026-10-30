@@ -66,6 +66,94 @@
       "realmRoles": ["USER"]
     },
     {
+      "id": "0f1c2a3b-0000-4000-8000-000000000004",
+      "username": "carla@email.com",
+      "email": "carla@email.com",
+      "firstName": "Carla",
+      "lastName": "Mendes",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "carla12345", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "id": "0f1c2a3b-0000-4000-8000-000000000005",
+      "username": "bruno@email.com",
+      "email": "bruno@email.com",
+      "firstName": "Bruno",
+      "lastName": "Costa",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "bruno12345", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "id": "0f1c2a3b-0000-4000-8000-000000000006",
+      "username": "fernanda@email.com",
+      "email": "fernanda@email.com",
+      "firstName": "Fernanda",
+      "lastName": "Rocha",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "fernanda12345", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "id": "0f1c2a3b-0000-4000-8000-000000000007",
+      "username": "diego@email.com",
+      "email": "diego@email.com",
+      "firstName": "Diego",
+      "lastName": "Alves",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "diego12345", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "id": "0f1c2a3b-0000-4000-8000-000000000008",
+      "username": "patricia@email.com",
+      "email": "patricia@email.com",
+      "firstName": "Patrícia",
+      "lastName": "Gomes",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "patricia12345", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "id": "0f1c2a3b-0000-4000-8000-000000000009",
+      "username": "rafael@email.com",
+      "email": "rafael@email.com",
+      "firstName": "Rafael",
+      "lastName": "Souza",
+      "enabled": false,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "rafael12345", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "id": "0f1c2a3b-0000-4000-8000-000000000010",
+      "username": "luana@email.com",
+      "email": "luana@email.com",
+      "firstName": "Luana",
+      "lastName": "Martins",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "luana12345", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "id": "0f1c2a3b-0000-4000-8000-000000000011",
+      "username": "marcos@email.com",
+      "email": "marcos@email.com",
+      "firstName": "Marcos",
+      "lastName": "Teixeira",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "marcos12345", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
       "username": "service-account-fincontrol-backend",
       "enabled": true,
       "serviceAccountClientId": "fincontrol-backend",
