@@ -1,11 +1,19 @@
 package br.unitins.tp2.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import br.unitins.tp2.dto.CadastroCompletoDTO;
 import br.unitins.tp2.dto.CadastroSimplesDTO;
+import br.unitins.tp2.dto.EventoLinhaDoTempoDTO;
 import br.unitins.tp2.dto.UsuarioEdicaoCompletaDTO;
 import br.unitins.tp2.dto.UsuarioEdicaoSimplesDTO;
 import br.unitins.tp2.dto.UsuarioResumoResponseDTO;
@@ -16,31 +24,52 @@ import br.unitins.tp2.mapper.AssinaturaResponseMapper;
 import br.unitins.tp2.mapper.PagamentoResponseMapper;
 import br.unitins.tp2.mapper.UsuarioResponseMapper;
 import br.unitins.tp2.model.AcaoAuditoria;
+import br.unitins.tp2.model.Assinatura;
 import br.unitins.tp2.model.AtividadeMei;
 import br.unitins.tp2.model.Categoria;
 import br.unitins.tp2.model.CategoriaPadrao;
 import br.unitins.tp2.model.CepLocal;
 import br.unitins.tp2.model.Endereco;
+import br.unitins.tp2.model.EventoAuditoria;
+import br.unitins.tp2.model.MudancaAssinatura;
+import br.unitins.tp2.model.Pagamento;
 import br.unitins.tp2.model.Papel;
 import br.unitins.tp2.model.PerfilFiscal;
+import br.unitins.tp2.model.Periodicidade;
+import br.unitins.tp2.model.Plano;
 import br.unitins.tp2.model.TipoAlvoAuditoria;
+import br.unitins.tp2.model.TipoMudancaAssinatura;
 import br.unitins.tp2.model.Usuario;
 import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.repository.CategoriaPadraoRepository;
 import br.unitins.tp2.repository.CategoriaRepository;
 import br.unitins.tp2.repository.ContatoRepository;
 import br.unitins.tp2.repository.CepLocalRepository;
+import br.unitins.tp2.repository.EventoAuditoriaRepository;
+import br.unitins.tp2.repository.MudancaAssinaturaRepository;
 import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.TransacaoRepository;
 import br.unitins.tp2.repository.UsuarioRepository;
+import br.unitins.tp2.util.AlteracoesAuditoria;
 import br.unitins.tp2.util.DocumentoUtil;
+import br.unitins.tp2.util.ExportacaoUsuariosCsv;
+import br.unitins.tp2.util.RegrasAcesso;
 import br.unitins.tp2.util.RetratoAuditoria;
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class UsuarioServiceImpl implements UsuarioService {
+
+    private static final DateTimeFormatter DATA_HORA_BR = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    @Inject
+    MudancaAssinaturaRepository mudancaRepository;
+
+    @Inject
+    EventoAuditoriaRepository eventoAuditoriaRepository;
 
     @Inject
     UsuarioRepository usuarioRepository;
@@ -278,13 +307,106 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    public List<Usuario> findByFiltros(String busca, Long idPlano, int page, int pageSize) {
-        return usuarioRepository.findByFiltros(busca, idPlano).page(page, pageSize).list();
+    public List<Usuario> findByFiltros(Filtro filtro, int page, int pageSize) {
+        return consulta(filtro).page(page, pageSize).list();
     }
 
     @Override
-    public long count(String busca, Long idPlano) {
-        return usuarioRepository.findByFiltros(busca, idPlano).count();
+    public long count(Filtro filtro) {
+        return consulta(filtro).count();
+    }
+
+    private PanacheQuery<Usuario> consulta(Filtro f) {
+        return usuarioRepository.findByFiltros(f.busca(), f.idPlano(), f.ativo(), f.incompleto(), f.agendamento());
+    }
+
+    @Override
+    public String exportarCsv(Filtro filtro) {
+        List<Usuario> usuarios = consulta(filtro).list();
+        Map<Long, Assinatura> assinaturas = assinaturaRepository
+                .findByUsuarios(usuarios.stream().map(Usuario::getId).toList()).stream()
+                .collect(Collectors.toMap(a -> a.getUsuario().getId(), Function.identity()));
+        List<ExportacaoUsuariosCsv.Linha> linhas = usuarios.stream().map(u -> {
+            Assinatura a = assinaturas.get(u.getId());
+            return new ExportacaoUsuariosCsv.Linha(u.getNome(), u.getEmail(), u.getPapel().getNome(), u.getAtivo(),
+                    u.isCadastroCompleto(), a == null ? null : a.getPlano().getNome(),
+                    a == null ? null : a.getPeriodicidade().getNome(), a == null ? null : a.getValor(),
+                    a == null ? null : a.getDataProximaCobranca(),
+                    a == null || !a.isTrocaAgendada() ? null : a.getProximoPlano().getNome(), u.getDataCadastro());
+        }).toList();
+        return ExportacaoUsuariosCsv.gerar(linhas);
+    }
+
+    // Keycloak primeiro (o refresh deixa de valer); depois a marca local que barra os tokens ja emitidos
+    @Override
+    public Usuario encerrarSessoes(long id, String keycloakIdDoAdmin) {
+        Usuario usuario = buscarUsuarioOuFalhar(id);
+        if (usuario.getKeycloakId() != null && usuario.getKeycloakId().equals(keycloakIdDoAdmin))
+            throw ValidationException.of("sessoes", "Use \"Sair\" para encerrar a sua própria sessão.");
+        List<String> sessoes = usuario.getKeycloakId() == null ? List.of()
+                : keycloakAdminService.encerrarSessoes(usuario.getKeycloakId());
+        return QuarkusTransaction.requiringNew().call(() -> {
+            Usuario atualizado = buscarUsuarioOuFalhar(id);
+            LocalDateTime agora = LocalDateTime.now();
+            atualizado.setSessoesEncerradasEm(agora);
+            atualizado.setSessoesRevogadas(RegrasAcesso.acrescentar(atualizado.getSessoesRevogadas(), sessoes));
+            auditoria.registrar(AcaoAuditoria.ENCERRAMENTO_SESSOES, TipoAlvoAuditoria.USUARIO, id,
+                    RetratoAuditoria.descricao(atualizado), Map.of(),
+                    Map.of("Sessões encerradas em", agora.format(DATA_HORA_BR)));
+            return atualizado;
+        });
+    }
+
+    // Do passado: cadastro, pagamentos, mudancas de plano (MudancaAssinatura) e acoes do admin
+    // (auditoria). Nada de financas pessoais; documento e telefone so como "campo alterado".
+    @Override
+    public List<EventoLinhaDoTempoDTO> linhaDoTempo(long id) {
+        Usuario usuario = buscarUsuarioOuFalhar(id);
+        List<EventoLinhaDoTempoDTO> eventos = new ArrayList<>();
+
+        List<MudancaAssinatura> mudancas = mudancaRepository.findByUsuario(id);
+        boolean temCadastro = mudancas.stream().anyMatch(m -> m.getTipo() == TipoMudancaAssinatura.CADASTRO);
+        if (!temCadastro && usuario.getDataCadastro() != null)
+            eventos.add(new EventoLinhaDoTempoDTO(usuario.getDataCadastro(), "conta", "Conta criada",
+                    usuario.getPapel().getNome()));
+
+        for (MudancaAssinatura m : mudancas) {
+            String descricao = m.getTipo() == TipoMudancaAssinatura.CADASTRO
+                    ? "Conta criada no plano " + m.getPlanoNovo().getNome()
+                    : planoNaData(m.getPlanoAnterior(), m.getPeriodicidadeAnterior(), m.getValorMensalAnterior())
+                            + " → " + planoNaData(m.getPlanoNovo(), m.getPeriodicidadeNova(), m.getValorMensalNovo());
+            if (m.getDetalhe() != null)
+                descricao += " · " + m.getDetalhe();
+            LocalDateTime quando = m.getDataCadastro() != null ? m.getDataCadastro() : m.getData().atStartOfDay();
+            eventos.add(new EventoLinhaDoTempoDTO(quando, "assinatura", m.getTipo().getNome(),
+                    descricao + " (" + m.getOrigem().getNome().toLowerCase() + ")"));
+        }
+
+        for (Pagamento p : pagamentoRepository.findByUsuario(id)) {
+            eventos.add(new EventoLinhaDoTempoDTO(p.getDataPagamento().atStartOfDay(), "pagamento",
+                    "Pagamento " + p.getStatus().getNome().toLowerCase(),
+                    p.getPlano().getNome() + " " + p.getPeriodicidade().getNome().toLowerCase() + " · R$ "
+                            + p.getValor().toPlainString().replace('.', ',') + " · " + p.getFormaPagamento().getNome()));
+        }
+
+        for (EventoAuditoria a : eventoAuditoriaRepository.findByUsuario(id)) {
+            String campos = AlteracoesAuditoria.deJson(a.getAlteracoes()).stream()
+                    .map(alteracao -> alteracao.campo()).collect(Collectors.joining(", "));
+            eventos.add(new EventoLinhaDoTempoDTO(a.getDataHora(), "admin", a.getAcao().getNome(),
+                    "Por " + a.getAdminNome() + (campos.isEmpty() ? "" : " · " + campos)));
+        }
+
+        eventos.sort(Comparator.comparing(EventoLinhaDoTempoDTO::dataHora).reversed());
+        return eventos;
+    }
+
+    private static String planoNaData(Plano plano, Periodicidade periodicidade, BigDecimal valorMensal) {
+        if (plano == null)
+            return "—";
+        if (plano.isGratuito())
+            return plano.getNome();
+        return plano.getNome() + " " + periodicidade.getNome().toLowerCase() + " (R$ "
+                + valorMensal.toPlainString().replace('.', ',') + "/mês)";
     }
 
     private String normalizarEmail(String email) {

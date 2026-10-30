@@ -1,14 +1,18 @@
 package br.unitins.tp2.resource;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 
 import br.unitins.tp2.dto.CadastroCompletoDTO;
 import br.unitins.tp2.dto.CadastroSimplesDTO;
+import br.unitins.tp2.dto.EventoLinhaDoTempoDTO;
 import br.unitins.tp2.dto.PageResponse;
 import br.unitins.tp2.dto.UsuarioResponseDTO;
 import br.unitins.tp2.dto.UsuarioEdicaoCompletaDTO;
@@ -34,6 +38,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 // Gestao de usuarios, exclusiva do administrador (RN12): consulta, criacao (cadastro simples ou
 // completo, com papel USER ou ADMIN), edicao e ativacao. O usuario tambem pode se cadastrar
@@ -53,17 +58,22 @@ public class UsuarioAdminResource {
     @Inject
     JsonWebToken jwt;
 
-    // busca = parte do nome ou do email; idPlano = plano vigente da assinatura. Cada linha traz o
-    // resumo da assinatura (as da pagina vem numa consulta so).
+    // busca = parte do nome ou do email; idPlano = plano vigente da assinatura; ativo = true/false;
+    // incompleto = cliente sem documento, perfil fiscal ou endereco; agendamento = troca ou
+    // cancelamento agendado. Cada linha traz o resumo da assinatura (as da pagina numa consulta so).
     @GET
     public PageResponse<UsuarioResponseDTO> buscarTodos(
             @QueryParam("busca") String busca,
             @QueryParam("idPlano") Long idPlano,
+            @QueryParam("ativo") Boolean ativo,
+            @QueryParam("incompleto") @DefaultValue("false") boolean incompleto,
+            @QueryParam("agendamento") @DefaultValue("false") boolean agendamento,
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("pageSize") @DefaultValue("10") int pageSize) {
 
-        List<Usuario> usuarios = service.findByFiltros(busca, idPlano, page, pageSize);
-        long totalItems = service.count(busca, idPlano);
+        UsuarioService.Filtro filtro = new UsuarioService.Filtro(busca, idPlano, ativo, incompleto, agendamento);
+        List<Usuario> usuarios = service.findByFiltros(filtro, page, pageSize);
+        long totalItems = service.count(filtro);
 
         Map<Long, Assinatura> assinaturas = assinaturaRepository
                 .findByUsuarios(usuarios.stream().map(Usuario::getId).toList()).stream()
@@ -71,6 +81,43 @@ public class UsuarioAdminResource {
 
         return PageResponse.of(usuarios, page, pageSize, totalItems,
                 u -> UsuarioResponseMapper.toResponse(u, assinaturas.get(u.getId())));
+    }
+
+    // CSV com os mesmos filtros da listagem: UTF-8 com BOM e ";" (abre certo no Excel), sem CPF,
+    // telefone e endereco
+    @GET
+    @Path("/exportacao")
+    @Produces("text/csv")
+    @Operation(summary = "Exporta a lista de usuários em CSV (mesmos filtros da listagem)")
+    public Response exportar(
+            @QueryParam("busca") String busca,
+            @QueryParam("idPlano") Long idPlano,
+            @QueryParam("ativo") Boolean ativo,
+            @QueryParam("incompleto") @DefaultValue("false") boolean incompleto,
+            @QueryParam("agendamento") @DefaultValue("false") boolean agendamento) {
+        String csv = service.exportarCsv(new UsuarioService.Filtro(busca, idPlano, ativo, incompleto, agendamento));
+        String nome = "usuarios-" + LocalDate.now() + ".csv";
+        return Response.ok(csv.getBytes(StandardCharsets.UTF_8))
+                .type("text/csv; charset=UTF-8")
+                .header("Content-Disposition", "attachment; filename=\"" + nome + "\"")
+                .build();
+    }
+
+    // encerra as sessoes no Keycloak e barra na hora os tokens ja emitidos (o admin nao encerra as proprias)
+    @POST
+    @Path("/{id}/sessoes/encerramento")
+    @Operation(summary = "Encerra as sessões ativas do usuário (vale na hora, sem esperar o token expirar)")
+    public UsuarioResponseDTO encerrarSessoes(@PathParam("id") Long id) {
+        return comAssinatura(service.encerrarSessoes(id, jwt.getSubject()));
+    }
+
+    @GET
+    @Path("/{id}/linha-do-tempo")
+    @Operation(summary = "Linha do tempo da relação do usuário com o FinControl",
+            description = "Cadastro, mudanças de plano, pagamentos e ações do admin. Nada das finanças pessoais, "
+                    + "documento ou telefone.")
+    public List<EventoLinhaDoTempoDTO> linhaDoTempo(@PathParam("id") Long id) {
+        return service.linhaDoTempo(id);
     }
 
     // cadastro simples: so nome, e-mail, senha e papel

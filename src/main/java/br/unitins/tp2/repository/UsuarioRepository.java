@@ -18,7 +18,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class UsuarioRepository implements PanacheRepository<Usuario> {
 
     // filtros opcionais: busca (parte do nome OU do email) e plano vigente da assinatura; nulo = nao filtra
-    public PanacheQuery<Usuario> findByFiltros(String busca, Long idPlano) {
+    // ativo: true/false/nulo; incompleto = cliente sem documento, perfil fiscal ou endereco;
+    // agendamento = assinatura com troca ou cancelamento agendado
+    public PanacheQuery<Usuario> findByFiltros(String busca, Long idPlano, Boolean ativo, boolean incompleto,
+            boolean agendamento) {
         List<String> condicoes = new ArrayList<>();
         Map<String, Object> params = new HashMap<>();
 
@@ -30,6 +33,20 @@ public class UsuarioRepository implements PanacheRepository<Usuario> {
         if (idPlano != null) {
             condicoes.add("id in (select a.usuario.id from Assinatura a where a.plano.id = :idPlano)");
             params.put("idPlano", idPlano);
+        }
+
+        if (ativo != null) {
+            condicoes.add("ativo = :ativo");
+            params.put("ativo", ativo);
+        }
+
+        if (incompleto) {
+            condicoes.add("papel = :papelCliente and (documento is null or perfilFiscal is null or endereco.municipio is null)");
+            params.put("papelCliente", Papel.USER);
+        }
+
+        if (agendamento) {
+            condicoes.add("id in (select a.usuario.id from Assinatura a where a.proximoPlano is not null)");
         }
 
         String where = condicoes.isEmpty() ? "" : String.join(" and ", condicoes) + " ";

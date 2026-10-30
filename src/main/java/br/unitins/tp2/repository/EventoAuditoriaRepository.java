@@ -54,6 +54,12 @@ public class EventoAuditoriaRepository implements PanacheRepository<EventoAudito
         return find(where + "order by dataHora desc, id desc", params);
     }
 
+    // acoes do admin sobre o usuario e a assinatura dele (linha do tempo)
+    public List<EventoAuditoria> findByUsuario(Long idUsuario) {
+        return list("idAlvo = ?1 and tipoAlvo in (?2, ?3) order by dataHora", idUsuario, TipoAlvoAuditoria.USUARIO,
+                TipoAlvoAuditoria.ASSINATURA);
+    }
+
     // admins que ja tem eventos: [keycloakId, nome, email] (para o filtro da tela)
     public List<Object[]> findAdmins() {
         return getEntityManager()

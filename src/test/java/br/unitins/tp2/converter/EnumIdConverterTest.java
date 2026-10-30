@@ -102,7 +102,7 @@ class EnumIdConverterTest {
                 AcaoAuditoria.EXCLUSAO_PARAMETRO_FISCAL, AcaoAuditoria.CRIACAO_FAIXA_IRPF,
                 AcaoAuditoria.ALTERACAO_FAIXA_IRPF, AcaoAuditoria.EXCLUSAO_FAIXA_IRPF, AcaoAuditoria.CORRECAO_CEP,
                 AcaoAuditoria.VERIFICACAO_CEP, AcaoAuditoria.REVALIDACAO_CEP, AcaoAuditoria.IMPORTACAO_CEP,
-                AcaoAuditoria.ALTERACAO_API_CEP, AcaoAuditoria.COBRANCA_MANUAL };
+                AcaoAuditoria.ALTERACAO_API_CEP, AcaoAuditoria.COBRANCA_MANUAL, AcaoAuditoria.ENCERRAMENTO_SESSOES };
         for (int i = 0; i < acoes.length; i++)
             CODIGOS.put(acoes[i], i + 1);
         CODIGOS.put(TipoAlvoAuditoria.USUARIO, 1);
