@@ -154,6 +154,17 @@
       "realmRoles": ["USER"]
     },
     {
+      "id": "0f1c2a3b-0000-4000-8000-000000000012",
+      "username": "beatriz@fincontrol.com",
+      "email": "beatriz@fincontrol.com",
+      "firstName": "Beatriz",
+      "lastName": "Nunes",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "beatriz12345", "temporary": false }],
+      "realmRoles": ["ADMIN"]
+    },
+    {
       "username": "service-account-fincontrol-backend",
       "enabled": true,
       "serviceAccountClientId": "fincontrol-backend",
