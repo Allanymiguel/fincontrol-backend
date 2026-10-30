@@ -34,7 +34,6 @@ public class DashboardServiceImpl implements DashboardService {
 
     private static final int MESES_PADRAO = 6;
     private static final int MESES_MAXIMO = 24;
-    private static final BigDecimal ZERO = BigDecimal.ZERO.setScale(2);
 
     @Inject
     AssinaturaRepository assinaturaRepository;
@@ -59,6 +58,8 @@ public class DashboardServiceImpl implements DashboardService {
         List<Assinatura> assinaturas = assinaturaRepository.listParaIndicadores();
         // um pagamento anual cobre ate 12 meses depois: busca a partir de um ano antes do inicio
         List<Pagamento> pagamentos = pagamentoRepository.findEntre(inicioPeriodo.minusYears(1), fimPeriodo);
+        // o estorno conta no mes em que foi feito, mesmo de um pagamento de antes do periodo
+        List<Pagamento> estornos = pagamentoRepository.findEstornadosEntre(inicioPeriodo, fimPeriodo);
         List<LocalDate> cadastros = usuarioRepository.findDatasCadastro(Papel.USER);
         LocalDate inicioHistorico = inicioDoHistorico(cadastros);
         List<Plano> planos = new ArrayList<>(planoRepository.listAll());
@@ -74,7 +75,9 @@ public class DashboardServiceImpl implements DashboardService {
                 continue;
             }
             BigDecimal aprovado = IndicadoresAssinatura.receitaAprovadaDoMes(pagamentos, mes);
-            receitaPorMes.add(new ReceitaMensal(mes.toString(), false, aprovado, ZERO, aprovado));
+            BigDecimal estornado = IndicadoresAssinatura.estornadoNoMes(estornos, mes);
+            receitaPorMes.add(new ReceitaMensal(mes.toString(), false, aprovado, estornado,
+                    aprovado.subtract(estornado)));
 
             // o mes atual vai so ate hoje
             LocalDate referencia = mes.atEndOfMonth().isAfter(hoje) ? hoje : mes.atEndOfMonth();

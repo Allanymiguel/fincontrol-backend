@@ -65,16 +65,17 @@ public class UsuarioRepository implements PanacheRepository<Usuario> {
     }
 
     // contas com o papel cadastradas no intervalo [de, ate) que ja tiveram algum pagamento aprovado
+    // (estornado depois tambem conta: o estorno so mexe na receita)
     public long countCadastradosComPagamentoAprovado(Papel papel, LocalDateTime de, LocalDateTime ate) {
         return getEntityManager()
                 .createQuery("select count(u) from Usuario u where u.papel = :papel "
                         + "and u.dataCadastro >= :de and u.dataCadastro < :ate "
-                        + "and exists (select p.id from Pagamento p where p.assinatura.usuario = u and p.status = :aprovado)",
+                        + "and exists (select p.id from Pagamento p where p.assinatura.usuario = u and p.status in :pagos)",
                         Long.class)
                 .setParameter("papel", papel)
                 .setParameter("de", de)
                 .setParameter("ate", ate)
-                .setParameter("aprovado", StatusPagamento.APROVADO)
+                .setParameter("pagos", List.of(StatusPagamento.APROVADO, StatusPagamento.ESTORNADO))
                 .getSingleResult();
     }
 

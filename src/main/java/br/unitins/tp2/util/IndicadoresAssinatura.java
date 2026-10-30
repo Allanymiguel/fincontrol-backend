@@ -29,10 +29,23 @@ public final class IndicadoresAssinatura {
     private IndicadoresAssinatura() {
     }
 
+    private static boolean temPlanoPago(Assinatura assinatura) {
+        return !assinatura.getPlano().isGratuito() && assinatura.getValor().signum() > 0;
+    }
+
     // plano pago valendo: ATIVA, fora do Gratuito e com valor de cobranca
     private static boolean isPaga(Assinatura assinatura) {
-        return assinatura.getStatus() == StatusAssinatura.ATIVA && !assinatura.getPlano().isGratuito()
-                && assinatura.getValor().signum() > 0;
+        return assinatura.getStatus() == StatusAssinatura.ATIVA && temPlanoPago(assinatura);
+    }
+
+    // pagamento recusado aguardando nova tentativa (volta ao Gratuito na 3a recusa)
+    private static boolean isPendente(Assinatura assinatura) {
+        return assinatura.getStatus() == StatusAssinatura.PENDENTE && temPlanoPago(assinatura);
+    }
+
+    // conta como pago: aprovado, mesmo que estornado depois (o estorno so mexe na receita, nao na assinatura)
+    private static boolean foiPago(Pagamento pagamento) {
+        return pagamento.getStatus() == StatusPagamento.APROVADO || pagamento.getStatus() == StatusPagamento.ESTORNADO;
     }
 
     private static boolean isContaAtiva(Assinatura assinatura) {
@@ -69,17 +82,24 @@ public final class IndicadoresAssinatura {
     }
 
     // perda de MRR ja anunciada: downgrades agendados (a diferenca), cancelamentos agendados (o MRR
-    // inteiro) e contas desativadas com plano pago (o MRR inteiro, mostrado a parte)
+    // inteiro), contas desativadas com plano pago e assinaturas com pagamento recusado (essas duas
+    // fora do MRR, com o valor mensal inteiro, mostradas a parte)
     public static ReceitaEmRisco calcularReceitaEmRisco(Collection<Assinatura> assinaturas) {
-        BigDecimal downgrades = ZERO, cancelamentos = ZERO, desativadas = ZERO;
-        long qtdDowngrades = 0, qtdCancelamentos = 0, qtdDesativadas = 0;
+        BigDecimal downgrades = ZERO, cancelamentos = ZERO, desativadas = ZERO, recusados = ZERO;
+        long qtdDowngrades = 0, qtdCancelamentos = 0, qtdDesativadas = 0, qtdRecusados = 0;
 
         for (Assinatura assinatura : assinaturas) {
-            if (!isPaga(assinatura))
+            if (!isPaga(assinatura) && !isPendente(assinatura))
                 continue;
+            // a conta desativada volta ao Gratuito na proxima cobranca, antes de qualquer nova tentativa
             if (!isContaAtiva(assinatura)) {
                 desativadas = desativadas.add(valorMensal(assinatura));
                 qtdDesativadas++;
+                continue;
+            }
+            if (isPendente(assinatura)) {
+                recusados = recusados.add(valorMensal(assinatura));
+                qtdRecusados++;
                 continue;
             }
             if (!assinatura.isTrocaAgendada())
@@ -97,30 +117,42 @@ public final class IndicadoresAssinatura {
         }
 
         return new ReceitaEmRisco(
-                downgrades.add(cancelamentos).add(desativadas),
+                downgrades.add(cancelamentos).add(desativadas).add(recusados),
                 new ValorQuantidade(downgrades, qtdDowngrades),
                 new ValorQuantidade(cancelamentos, qtdCancelamentos),
-                new ValorQuantidade(desativadas, qtdDesativadas));
+                new ValorQuantidade(desativadas, qtdDesativadas),
+                new ValorQuantidade(recusados, qtdRecusados));
     }
 
-    // pagamentos aprovados com data no mes
+    // pagamentos aprovados com data no mes, inclusive os estornados depois (o estorno sai no mes dele)
     public static BigDecimal receitaAprovadaDoMes(Collection<Pagamento> pagamentos, YearMonth mes) {
         BigDecimal total = ZERO;
         for (Pagamento pagamento : pagamentos) {
-            if (pagamento.getStatus() == StatusPagamento.APROVADO
-                    && YearMonth.from(pagamento.getDataPagamento()).equals(mes))
+            if (foiPago(pagamento) && YearMonth.from(pagamento.getDataPagamento()).equals(mes))
+                total = total.add(pagamento.getValor());
+        }
+        return total;
+    }
+
+    // estornos feitos no mes, de pagamentos de qualquer mes
+    public static BigDecimal estornadoNoMes(Collection<Pagamento> pagamentos, YearMonth mes) {
+        BigDecimal total = ZERO;
+        for (Pagamento pagamento : pagamentos) {
+            if (pagamento.getStatus() == StatusPagamento.ESTORNADO && pagamento.getDataEstorno() != null
+                    && YearMonth.from(pagamento.getDataEstorno()).equals(mes))
                 total = total.add(pagamento.getValor());
         }
         return total;
     }
 
     // Reconstrucao pelos pagamentos: para cada assinatura vale o pagamento aprovado mais recente ate
-    // a data; se ele ainda cobre a data (um ciclo a partir do pagamento), a assinatura conta como
-    // pagante do plano daquele pagamento. Planos na ordem em que aparecem.
+    // a data (estornado tambem: o estorno nao mexe na assinatura); se ele ainda cobre a data (um ciclo
+    // a partir do pagamento), a assinatura conta como pagante do plano daquele pagamento. Recusado
+    // nao cobre nada. Planos na ordem em que aparecem.
     public static Map<Plano, Long> pagantesPorPlano(Collection<Pagamento> pagamentos, LocalDate data) {
         Map<Assinatura, Pagamento> ultimoPorAssinatura = new IdentityHashMap<>();
         for (Pagamento pagamento : pagamentos) {
-            if (pagamento.getStatus() != StatusPagamento.APROVADO || pagamento.getDataPagamento().isAfter(data))
+            if (!foiPago(pagamento) || pagamento.getDataPagamento().isAfter(data))
                 continue;
             Pagamento atual = ultimoPorAssinatura.get(pagamento.getAssinatura());
             if (atual == null || pagamento.getDataPagamento().isAfter(atual.getDataPagamento()))

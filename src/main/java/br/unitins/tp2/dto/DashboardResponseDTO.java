@@ -31,11 +31,16 @@ public record DashboardResponseDTO(
         // MRR das assinaturas com volta ao Gratuito agendada
         ValorQuantidade cancelamentos,
         // MRR de contas desativadas com plano pago (fora do MRR: voltam ao Gratuito na proxima cobranca)
-        ValorQuantidade contasDesativadas
+        ValorQuantidade contasDesativadas,
+        // valor mensal das assinaturas com pagamento recusado em nova tentativa (fora do MRR: voltam ao
+        // Gratuito na 3a recusa seguida)
+        ValorQuantidade pagamentosRecusados
     ) {
     }
 
-    // mes = "AAAA-MM". semHistorico = mes anterior ao primeiro dado do sistema: valores nulos
+    // mes = "AAAA-MM". aprovado: pagamentos com data no mes (inclusive os estornados depois); estornado:
+    // estornos feitos no mes; liquido = aprovado - estornado. semHistorico = mes anterior ao primeiro
+    // dado do sistema: valores nulos
     public record ReceitaMensal(String mes, boolean semHistorico, BigDecimal aprovado, BigDecimal estornado,
             BigDecimal liquido) {
     }

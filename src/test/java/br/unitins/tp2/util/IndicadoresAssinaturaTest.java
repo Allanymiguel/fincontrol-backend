@@ -111,6 +111,55 @@ class IndicadoresAssinaturaTest {
     }
 
     @Test
+    void pagamentoRecusadoSaiDoMrrEEntraNoRiscoAParte() {
+        Assinatura pendente = assinatura(empreendedor, Periodicidade.MENSAL, "39.90", true);
+        pendente.setStatus(StatusAssinatura.PENDENTE);
+        // pendente e com conta desativada: a desativacao vence (volta ao Gratuito antes de tentar de novo)
+        Assinatura pendenteDesativada = assinatura(essencial, Periodicidade.MENSAL, "19.90", false);
+        pendenteDesativada.setStatus(StatusAssinatura.PENDENTE);
+
+        ReceitaEmRisco risco = IndicadoresAssinatura.calcularReceitaEmRisco(List.of(pendente, pendenteDesativada));
+
+        assertEquals(new BigDecimal("0.00"), IndicadoresAssinatura.calcularMrr(List.of(pendente)).valor());
+        assertEquals(new BigDecimal("39.90"), risco.pagamentosRecusados().valor());
+        assertEquals(1, risco.pagamentosRecusados().assinaturas());
+        assertEquals(new BigDecimal("19.90"), risco.contasDesativadas().valor());
+        assertEquals(new BigDecimal("59.80"), risco.total());
+    }
+
+    @Test
+    void estornoContaNoMesEmQueFoiFeito() {
+        Assinatura assinatura = assinatura(essencial, Periodicidade.MENSAL, "19.90", true);
+        Pagamento setembro = pagamento(assinatura, essencial, Periodicidade.MENSAL, "19.90", "2026-09-10",
+                StatusPagamento.ESTORNADO);
+        setembro.setDataEstorno(LocalDate.of(2026, 10, 3).atTime(14, 0));
+        Pagamento outubro = pagamento(assinatura, essencial, Periodicidade.MENSAL, "19.90", "2026-10-10",
+                StatusPagamento.APROVADO);
+        List<Pagamento> pagamentos = List.of(setembro, outubro);
+
+        // setembro recebeu (o estorno nao reescreve o mes do pagamento)...
+        assertEquals(new BigDecimal("19.90"),
+                IndicadoresAssinatura.receitaAprovadaDoMes(pagamentos, YearMonth.of(2026, 9)));
+        assertEquals(new BigDecimal("0.00"), IndicadoresAssinatura.estornadoNoMes(pagamentos, YearMonth.of(2026, 9)));
+        // ...e outubro devolveu
+        assertEquals(new BigDecimal("19.90"),
+                IndicadoresAssinatura.receitaAprovadaDoMes(pagamentos, YearMonth.of(2026, 10)));
+        assertEquals(new BigDecimal("19.90"),
+                IndicadoresAssinatura.estornadoNoMes(pagamentos, YearMonth.of(2026, 10)));
+    }
+
+    @Test
+    void pagamentoEstornadoContinuaCobrindoOPeriodo() {
+        Assinatura assinatura = assinatura(essencial, Periodicidade.MENSAL, "19.90", true);
+        Pagamento estornado = pagamento(assinatura, essencial, Periodicidade.MENSAL, "19.90", "2026-10-10",
+                StatusPagamento.ESTORNADO);
+        estornado.setDataEstorno(LocalDate.of(2026, 10, 21).atTime(9, 40));
+
+        assertEquals(Map.of(essencial, 1L),
+                IndicadoresAssinatura.pagantesPorPlano(List.of(estornado), LocalDate.of(2026, 10, 31)));
+    }
+
+    @Test
     void receitaDoMesSomaSoAprovadosComDataNoMes() {
         Assinatura assinatura = assinatura(essencial, Periodicidade.MENSAL, "19.90", true);
         List<Pagamento> pagamentos = List.of(

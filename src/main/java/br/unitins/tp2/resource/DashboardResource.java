@@ -34,14 +34,18 @@ public class DashboardResource {
 
             - **MRR** (hoje): soma, para cada assinatura ATIVA de plano pago (fora o Gratuito) de conta ativa, \
             do valor de cada cobrança já com o cupom, convertido para mensal (anual ÷ 12).
-            - **Receita do mês**: pagamentos aprovados com data no mês, menos os estornos com data no mês.
+            - **Receita do mês**: pagamentos aprovados com data no mês (inclusive os estornados depois), \
+            menos os estornos feitos no mês (de pagamentos de qualquer mês). Recusados não entram.
             - **Receita em risco** (hoje): perda de MRR dos downgrades agendados (MRR atual − MRR do plano \
-            agendado) + MRR das assinaturas com cancelamento agendado + MRR das contas desativadas com plano \
-            pago (fora do MRR: voltam ao Gratuito na próxima cobrança).
+            agendado) + MRR das assinaturas com cancelamento agendado + valor mensal das contas desativadas \
+            com plano pago (fora do MRR: voltam ao Gratuito na próxima cobrança) + valor mensal das \
+            assinaturas com pagamento recusado aguardando nova tentativa (fora do MRR: voltam ao Gratuito \
+            na 3ª recusa seguida).
             - **Assinantes por plano** (hoje): contas ativas por plano vigente.
             - **Evolução**: reconstruída dos pagamentos. No último dia de cada mês (ou hoje, no mês atual), \
             uma assinatura é pagante do plano do seu pagamento aprovado mais recente se esse pagamento ainda \
-            cobre o dia (1 mês ou 1 ano). Contas cadastradas = contas USER com cadastro até o dia.
+            cobre o dia (1 mês ou 1 ano). Pagamento estornado continua cobrindo (o estorno só mexe na \
+            receita); recusado não cobre. Contas cadastradas = contas USER com cadastro até o dia.
             - **Novos cadastros**: contas USER com data de cadastro no período.
             - **Conversão**: dos novos cadastros do período, percentual que já teve algum pagamento aprovado \
             (toda conta nasce no Gratuito, RN13). Nula quando não há cadastros.
