@@ -14,6 +14,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import br.unitins.tp2.model.AcaoAuditoria;
 import br.unitins.tp2.model.AtividadeMei;
 import br.unitins.tp2.model.EnumComId;
 import br.unitins.tp2.model.EscopoTransacao;
@@ -24,6 +25,7 @@ import br.unitins.tp2.model.PerfilFiscal;
 import br.unitins.tp2.model.Periodicidade;
 import br.unitins.tp2.model.StatusAssinatura;
 import br.unitins.tp2.model.StatusPagamento;
+import br.unitins.tp2.model.TipoAlvoAuditoria;
 import br.unitins.tp2.model.TipoContato;
 import br.unitins.tp2.model.TipoMudancaAssinatura;
 import br.unitins.tp2.model.TipoTransacao;
@@ -38,7 +40,7 @@ class EnumIdConverterTest {
             new PapelConverter(), new PerfilFiscalConverter(), new PeriodicidadeConverter(),
             new StatusAssinaturaConverter(), new StatusPagamentoConverter(), new TipoContatoConverter(),
             new TipoTransacaoConverter(), new TipoMudancaAssinaturaConverter(),
-            new OrigemMudancaAssinaturaConverter());
+            new OrigemMudancaAssinaturaConverter(), new AcaoAuditoriaConverter(), new TipoAlvoAuditoriaConverter());
 
     // codigo esperado de cada constante: o contrato com o banco (import.sql) e com a API (idXxx)
     private static final Map<Enum<?>, Integer> CODIGOS = new LinkedHashMap<>();
@@ -82,6 +84,22 @@ class EnumIdConverterTest {
         CODIGOS.put(OrigemMudancaAssinatura.CADASTRO, 1);
         CODIGOS.put(OrigemMudancaAssinatura.ADMIN, 2);
         CODIGOS.put(OrigemMudancaAssinatura.COBRANCA, 3);
+        AcaoAuditoria[] acoes = { AcaoAuditoria.CRIACAO_USUARIO, AcaoAuditoria.EDICAO_USUARIO,
+                AcaoAuditoria.ATIVACAO_CONTA, AcaoAuditoria.DESATIVACAO_CONTA, AcaoAuditoria.TROCA_PLANO,
+                AcaoAuditoria.DESFAZER_TROCA, AcaoAuditoria.CANCELAMENTO_PLANO, AcaoAuditoria.OBSERVACAO_ASSINATURA,
+                AcaoAuditoria.CRIACAO_PLANO, AcaoAuditoria.ALTERACAO_PLANO, AcaoAuditoria.EXCLUSAO_PLANO,
+                AcaoAuditoria.CRIACAO_CUPOM, AcaoAuditoria.ALTERACAO_CUPOM, AcaoAuditoria.EXCLUSAO_CUPOM,
+                AcaoAuditoria.CRIACAO_PARAMETRO_FISCAL, AcaoAuditoria.ALTERACAO_PARAMETRO_FISCAL,
+                AcaoAuditoria.EXCLUSAO_PARAMETRO_FISCAL, AcaoAuditoria.CRIACAO_FAIXA_IRPF,
+                AcaoAuditoria.ALTERACAO_FAIXA_IRPF, AcaoAuditoria.EXCLUSAO_FAIXA_IRPF };
+        for (int i = 0; i < acoes.length; i++)
+            CODIGOS.put(acoes[i], i + 1);
+        CODIGOS.put(TipoAlvoAuditoria.USUARIO, 1);
+        CODIGOS.put(TipoAlvoAuditoria.ASSINATURA, 2);
+        CODIGOS.put(TipoAlvoAuditoria.PLANO, 3);
+        CODIGOS.put(TipoAlvoAuditoria.CUPOM, 4);
+        CODIGOS.put(TipoAlvoAuditoria.PARAMETRO_FISCAL, 5);
+        CODIGOS.put(TipoAlvoAuditoria.FAIXA_IRPF, 6);
     }
 
     // enum so de teste com codigos fora da ordem das constantes

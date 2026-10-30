@@ -1,0 +1,58 @@
+package br.unitins.tp2.model;
+
+import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+// O que o administrador fez. Codigos explicitos e estaveis: novas acoes entram no fim.
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
+public enum AcaoAuditoria implements EnumComId {
+    CRIACAO_USUARIO(1L, "Criação de usuário"),
+    EDICAO_USUARIO(2L, "Edição de usuário"),
+    ATIVACAO_CONTA(3L, "Ativação de conta"),
+    DESATIVACAO_CONTA(4L, "Desativação de conta"),
+    TROCA_PLANO(5L, "Troca de plano"),
+    DESFAZER_TROCA(6L, "Troca agendada desfeita"),
+    CANCELAMENTO_PLANO(7L, "Cancelamento de plano"),
+    OBSERVACAO_ASSINATURA(8L, "Observação da assinatura"),
+    CRIACAO_PLANO(9L, "Criação de plano"),
+    ALTERACAO_PLANO(10L, "Alteração de plano"),
+    EXCLUSAO_PLANO(11L, "Exclusão de plano"),
+    CRIACAO_CUPOM(12L, "Criação de cupom"),
+    ALTERACAO_CUPOM(13L, "Alteração de cupom"),
+    EXCLUSAO_CUPOM(14L, "Exclusão de cupom"),
+    CRIACAO_PARAMETRO_FISCAL(15L, "Criação de parâmetro fiscal"),
+    ALTERACAO_PARAMETRO_FISCAL(16L, "Alteração de parâmetro fiscal"),
+    EXCLUSAO_PARAMETRO_FISCAL(17L, "Exclusão de parâmetro fiscal"),
+    CRIACAO_FAIXA_IRPF(18L, "Criação de faixa do IRPF"),
+    ALTERACAO_FAIXA_IRPF(19L, "Alteração de faixa do IRPF"),
+    EXCLUSAO_FAIXA_IRPF(20L, "Exclusão de faixa do IRPF");
+
+    private final Long ID;
+    private final String NOME;
+
+    AcaoAuditoria(Long id, String nome) {
+        this.ID = id;
+        this.NOME = nome;
+    }
+
+    @Override
+    public Long getId() {
+        return ID;
+    }
+
+    public String getNome() {
+        return NOME;
+    }
+
+    public static AcaoAuditoria valueOf(Long id) {
+        if (id == null)
+            return null;
+
+        for (AcaoAuditoria a : AcaoAuditoria.values()) {
+            if (Objects.equals(a.getId(), id))
+                return a;
+        }
+        return null;
+    }
+}
