@@ -37,6 +37,7 @@ import br.unitins.tp2.model.Papel;
 import br.unitins.tp2.model.PerfilFiscal;
 import br.unitins.tp2.model.Periodicidade;
 import br.unitins.tp2.model.Plano;
+import br.unitins.tp2.model.StatusPagamento;
 import br.unitins.tp2.model.TipoAlvoAuditoria;
 import br.unitins.tp2.model.TipoMudancaAssinatura;
 import br.unitins.tp2.model.Usuario;
@@ -371,10 +372,14 @@ public class UsuarioServiceImpl implements UsuarioService {
                     usuario.getPapel().getNome()));
 
         for (MudancaAssinatura m : mudancas) {
-            String descricao = m.getTipo() == TipoMudancaAssinatura.CADASTRO
-                    ? "Conta criada no plano " + m.getPlanoNovo().getNome()
-                    : planoNaData(m.getPlanoAnterior(), m.getPeriodicidadeAnterior(), m.getValorMensalAnterior())
-                            + " → " + planoNaData(m.getPlanoNovo(), m.getPeriodicidadeNova(), m.getValorMensalNovo());
+            String descricao = switch (m.getTipo()) {
+                case CADASTRO -> "Conta criada no plano " + m.getPlanoNovo().getNome();
+                // o plano nao muda na recusa: so o plano em que ela aconteceu
+                case PAGAMENTO_RECUSADO ->
+                    planoNaData(m.getPlanoAnterior(), m.getPeriodicidadeAnterior(), m.getValorMensalAnterior());
+                default -> planoNaData(m.getPlanoAnterior(), m.getPeriodicidadeAnterior(), m.getValorMensalAnterior())
+                        + " → " + planoNaData(m.getPlanoNovo(), m.getPeriodicidadeNova(), m.getValorMensalNovo());
+            };
             if (m.getDetalhe() != null)
                 descricao += " · " + m.getDetalhe();
             LocalDateTime quando = m.getDataCadastro() != null ? m.getDataCadastro() : m.getData().atStartOfDay();
@@ -382,11 +387,20 @@ public class UsuarioServiceImpl implements UsuarioService {
                     descricao + " (" + m.getOrigem().getNome().toLowerCase() + ")"));
         }
 
+        // a recusa ja aparece como tentativa no historico da assinatura; o estornado aparece duas vezes:
+        // quando foi pago e quando foi estornado
         for (Pagamento p : pagamentoRepository.findByUsuario(id)) {
+            if (p.getStatus() == StatusPagamento.RECUSADO)
+                continue;
+            String descricao = p.getPlano().getNome() + " " + p.getPeriodicidade().getNome().toLowerCase() + " · R$ "
+                    + p.getValor().toPlainString().replace('.', ',') + " · " + p.getFormaPagamento().getNome();
             eventos.add(new EventoLinhaDoTempoDTO(p.getDataPagamento().atStartOfDay(), "pagamento",
-                    "Pagamento " + p.getStatus().getNome().toLowerCase(),
-                    p.getPlano().getNome() + " " + p.getPeriodicidade().getNome().toLowerCase() + " · R$ "
-                            + p.getValor().toPlainString().replace('.', ',') + " · " + p.getFormaPagamento().getNome()));
+                    p.getStatus() == StatusPagamento.ESTORNADO ? "Pagamento aprovado"
+                            : "Pagamento " + p.getStatus().getNome().toLowerCase(),
+                    descricao));
+            if (p.getStatus() == StatusPagamento.ESTORNADO && p.getDataEstorno() != null)
+                eventos.add(new EventoLinhaDoTempoDTO(p.getDataEstorno(), "pagamento", "Pagamento estornado",
+                        descricao + " · " + p.getMotivoEstorno() + " · Por " + p.getEstornadoPor()));
         }
 
         for (EventoAuditoria a : eventoAuditoriaRepository.findByUsuario(id)) {
