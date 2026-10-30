@@ -9,6 +9,7 @@ import org.jboss.logging.Logger;
 import br.unitins.tp2.client.KeycloakAdminClient;
 import br.unitins.tp2.client.KeycloakErro;
 import br.unitins.tp2.client.KeycloakRole;
+import br.unitins.tp2.client.KeycloakSessao;
 import br.unitins.tp2.client.KeycloakUsuario;
 import br.unitins.tp2.exception.ResourceNotFoundException;
 import br.unitins.tp2.exception.ServicoExternoException;
@@ -75,6 +76,18 @@ public class KeycloakAdminService {
         executar(token -> {
             adminClient.atualizarUsuario(token, keycloakId, KeycloakUsuario.soAtivo(ativo));
             return null;
+        });
+    }
+
+    // Encerra as sessoes e devolve os ids delas (claim "sid"): o refresh token deixa de valer e o
+    // access token em uso e barrado pelo ContaAtivaAugmentor (por sid, sem depender de relogio)
+    public List<String> encerrarSessoes(String keycloakId) {
+        return executar(token -> {
+            List<String> sessoes = adminClient.buscarSessoes(token, keycloakId).stream()
+                    .map(KeycloakSessao::id)
+                    .toList();
+            adminClient.encerrarSessoes(token, keycloakId);
+            return sessoes;
         });
     }
 

@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import br.unitins.tp2.util.RegrasAcesso;
 import io.quarkus.security.AuthenticationFailedException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Context;
@@ -29,7 +30,10 @@ public class AuthenticationFailedExceptionMapper implements ExceptionMapper<Auth
         p.type = baseUrl + "/errors/unauthorized";
         p.title = "Não autenticado";
         p.status = Response.Status.UNAUTHORIZED.getStatusCode();
-        p.detail = "Sessão inválida ou expirada. Faça login novamente.";
+        // conta desativada ou sessao encerrada pelo admin (ContaAtivaAugmentor): o motivo;
+        // demais casos (assinatura, emissor, validade): mensagem generica
+        p.detail = RegrasAcesso.isMotivoConhecido(e.getMessage()) ? e.getMessage()
+                : "Sessão inválida ou expirada. Faça login novamente.";
         p.instance = (uri != null ? uri.getRequestUri().getPath() : null);
         p.timestamp = OffsetDateTime.now();
 

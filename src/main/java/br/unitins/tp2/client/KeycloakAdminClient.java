@@ -40,6 +40,15 @@ public interface KeycloakAdminClient {
     void excluirUsuario(@HeaderParam("Authorization") String autorizacao, @PathParam("id") String id);
 
     @GET
+    @Path("/users/{id}/sessions")
+    List<KeycloakSessao> buscarSessoes(@HeaderParam("Authorization") String autorizacao, @PathParam("id") String id);
+
+    // encerra todas as sessoes do usuario (o refresh token deixa de valer)
+    @POST
+    @Path("/users/{id}/logout")
+    void encerrarSessoes(@HeaderParam("Authorization") String autorizacao, @PathParam("id") String id);
+
+    @GET
     @Path("/roles/{nome}")
     KeycloakRole buscarRole(@HeaderParam("Authorization") String autorizacao, @PathParam("nome") String nome);
 

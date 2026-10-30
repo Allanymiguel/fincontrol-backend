@@ -1,5 +1,7 @@
 package br.unitins.tp2.model;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -45,6 +47,13 @@ public class Usuario extends DefaultEntity {
     // opcional (0..1 no UML): o cadastro simples nao tem endereco
     @Embedded
     private Endereco endereco;
+
+    // "encerrar sessoes" do admin: quando foi e os ids das sessoes encerradas (claim "sid"), cujo
+    // token o ContaAtivaAugmentor recusa (ids separados por virgula, so os mais recentes)
+    private LocalDateTime sessoesEncerradasEm;
+
+    @Column(length = 2000)
+    private String sessoesRevogadas;
 
     // cadastro completo = dados fiscais e endereco preenchidos; o simples tem so o acesso
     public boolean isCadastroCompleto() {
@@ -137,5 +146,21 @@ public class Usuario extends DefaultEntity {
 
     public void setEndereco(Endereco endereco) {
         this.endereco = endereco;
+    }
+
+    public LocalDateTime getSessoesEncerradasEm() {
+        return sessoesEncerradasEm;
+    }
+
+    public void setSessoesEncerradasEm(LocalDateTime sessoesEncerradasEm) {
+        this.sessoesEncerradasEm = sessoesEncerradasEm;
+    }
+
+    public String getSessoesRevogadas() {
+        return sessoesRevogadas;
+    }
+
+    public void setSessoesRevogadas(String sessoesRevogadas) {
+        this.sessoesRevogadas = sessoesRevogadas;
     }
 }
