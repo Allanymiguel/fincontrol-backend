@@ -8,8 +8,13 @@ import org.jboss.logging.Logger;
 import br.unitins.tp2.dto.CobrancaResponseDTO;
 import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.model.Assinatura;
+import br.unitins.tp2.model.MudancaAssinatura;
+import br.unitins.tp2.model.OrigemMudancaAssinatura;
+import br.unitins.tp2.model.Periodicidade;
 import br.unitins.tp2.model.Plano;
+import br.unitins.tp2.model.TipoMudancaAssinatura;
 import br.unitins.tp2.repository.AssinaturaRepository;
+import br.unitins.tp2.repository.MudancaAssinaturaRepository;
 import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.PlanoRepository;
 import io.quarkus.scheduler.Scheduled;
@@ -36,6 +41,9 @@ public class CobrancaServiceImpl implements CobrancaService {
     @Inject
     PlanoRepository planoRepository;
 
+    @Inject
+    MudancaAssinaturaRepository mudancaRepository;
+
     @Scheduled(cron = "{fincontrol.cobranca.cron}", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
     void cobrarDiariamente() {
         CobrancaResponseDTO resultado = processar(LocalDate.now());
@@ -58,12 +66,20 @@ public class CobrancaServiceImpl implements CobrancaService {
 
                 if (!assinatura.getUsuario().getAtivo()) {
                     gratuito = gratuito != null ? gratuito : buscarGratuitoOuFalhar();
+                    MudancaAssinatura volta = AssinaturaServiceImpl.mudancaDoVigente(assinatura,
+                            TipoMudancaAssinatura.VOLTA_GRATUITO_CONTA_DESATIVADA, OrigemMudancaAssinatura.COBRANCA, dia);
+                    volta.definirNovo(gratuito, Periodicidade.MENSAL, BigDecimal.ZERO);
+                    mudancaRepository.persist(volta);
                     AssinaturaServiceImpl.aplicarGratuito(assinatura, gratuito, dia);
                     gratuitos++;
                     break;
                 }
 
+                MudancaAssinatura troca = null;
                 if (assinatura.isTrocaAgendada()) {
+                    TipoMudancaAssinatura tipo = assinatura.getProximoPlano().isGratuito()
+                            ? TipoMudancaAssinatura.CANCELAMENTO_APLICADO : TipoMudancaAssinatura.DOWNGRADE_APLICADO;
+                    troca = AssinaturaServiceImpl.mudancaDoVigente(assinatura, tipo, OrigemMudancaAssinatura.COBRANCA, dia);
                     aplicarTrocaAgendada(assinatura);
                     trocas++;
                 }
@@ -72,6 +88,10 @@ public class CobrancaServiceImpl implements CobrancaService {
                 BigDecimal valor = assinatura.getPlano().calcularValor(assinatura.getPeriodicidade(),
                         assinatura.getCupom());
                 assinatura.setValor(valor);
+                if (troca != null) {
+                    troca.definirNovo(assinatura.getPlano(), assinatura.getPeriodicidade(), valor);
+                    mudancaRepository.persist(troca);
+                }
 
                 if (valor.signum() == 0) {
                     gratuitos += Plano.NOME_GRATUITO.equals(assinatura.getPlano().getNome()) ? 1 : 0;

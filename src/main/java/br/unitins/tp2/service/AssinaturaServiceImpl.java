@@ -3,6 +3,7 @@ package br.unitins.tp2.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
@@ -16,14 +17,18 @@ import br.unitins.tp2.model.Assinatura;
 import br.unitins.tp2.model.Cupom;
 import br.unitins.tp2.model.EfeitoTroca;
 import br.unitins.tp2.model.FormaPagamento;
+import br.unitins.tp2.model.MudancaAssinatura;
+import br.unitins.tp2.model.OrigemMudancaAssinatura;
 import br.unitins.tp2.model.Pagamento;
 import br.unitins.tp2.model.Periodicidade;
 import br.unitins.tp2.model.Plano;
 import br.unitins.tp2.model.StatusAssinatura;
 import br.unitins.tp2.model.StatusPagamento;
+import br.unitins.tp2.model.TipoMudancaAssinatura;
 import br.unitins.tp2.model.Usuario;
 import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.repository.CupomRepository;
+import br.unitins.tp2.repository.MudancaAssinaturaRepository;
 import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.PlanoRepository;
 import br.unitins.tp2.repository.UsuarioRepository;
@@ -43,6 +48,7 @@ import jakarta.transaction.Transactional;
 public class AssinaturaServiceImpl implements AssinaturaService {
 
     private static final BigDecimal ZERO = BigDecimal.ZERO.setScale(2);
+    private static final DateTimeFormatter DATA_BR = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     @Inject
     AssinaturaRepository assinaturaRepository;
@@ -58,6 +64,9 @@ public class AssinaturaServiceImpl implements AssinaturaService {
 
     @Inject
     CupomRepository cupomRepository;
+
+    @Inject
+    MudancaAssinaturaRepository mudancaRepository;
 
     // plano, periodicidade, cupom e forma ja validados, com o valor de cada cobranca
     private record Escolha(Plano plano, Periodicidade periodicidade, Cupom cupom, FormaPagamento forma,
@@ -84,6 +93,10 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         aplicarGratuito(assinatura, gratuito, hoje);
         assinaturaRepository.persist(assinatura);
 
+        MudancaAssinatura cadastro = novaMudanca(assinatura, TipoMudancaAssinatura.CADASTRO,
+                OrigemMudancaAssinatura.CADASTRO, hoje);
+        cadastro.definirNovo(gratuito, Periodicidade.MENSAL, ZERO);
+        mudancaRepository.persist(cadastro);
         return assinatura;
     }
 
@@ -148,6 +161,7 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         if (!assinatura.isTrocaAgendada())
             throw ValidationException.of("idPlano", "Não há troca de plano agendada.");
 
+        mudancaRepository.persist(registroDoDesfazer(assinatura, LocalDate.now()));
         assinatura.limparTrocaAgendada();
         return assinatura;
     }
@@ -227,6 +241,8 @@ public class AssinaturaServiceImpl implements AssinaturaService {
     }
 
     private void aplicar(Assinatura assinatura, Escolha nova, Calculo calculo, LocalDate hoje) {
+        mudancaRepository.persist(registroDaTroca(assinatura, nova, calculo, hoje));
+
         switch (calculo.efeito()) {
             case DESFAZ_AGENDAMENTO -> assinatura.limparTrocaAgendada();
             case AGENDADO -> {
@@ -252,6 +268,38 @@ public class AssinaturaServiceImpl implements AssinaturaService {
                     pagamentoRepository.persist(novoPagamento(assinatura, hoje));
             }
         }
+    }
+
+    // montado antes de aplicar a troca, enquanto a assinatura ainda tem o plano de antes
+    private MudancaAssinatura registroDaTroca(Assinatura atual, Escolha nova, Calculo calculo, LocalDate hoje) {
+        if (calculo.efeito() == EfeitoTroca.DESFAZ_AGENDAMENTO)
+            return registroDoDesfazer(atual, hoje);
+
+        TipoMudancaAssinatura tipo;
+        if (calculo.efeito() == EfeitoTroca.IMEDIATO) {
+            boolean aumenta = nova.periodicidade().valorMensal(nova.valor())
+                    .compareTo(atual.getPeriodicidade().valorMensal(atual.getValor())) > 0;
+            tipo = aumenta ? TipoMudancaAssinatura.UPGRADE : TipoMudancaAssinatura.TROCA_IMEDIATA;
+        } else {
+            tipo = nova.plano().isGratuito() ? TipoMudancaAssinatura.CANCELAMENTO_AGENDADO
+                    : TipoMudancaAssinatura.DOWNGRADE_AGENDADO;
+        }
+
+        MudancaAssinatura mudanca = mudancaDoVigente(atual, tipo, OrigemMudancaAssinatura.ADMIN, hoje);
+        mudanca.definirNovo(nova.plano(), nova.periodicidade(), nova.valor());
+        if (calculo.efeito() == EfeitoTroca.AGENDADO)
+            mudanca.setDetalhe("Vale a partir de " + calculo.dataProximaCobranca().format(DATA_BR) + ".");
+        return mudanca;
+    }
+
+    // anterior = o que estava agendado; novo = o plano vigente, que continua
+    private MudancaAssinatura registroDoDesfazer(Assinatura atual, LocalDate hoje) {
+        MudancaAssinatura mudanca = novaMudanca(atual, TipoMudancaAssinatura.AGENDAMENTO_DESFEITO,
+                OrigemMudancaAssinatura.ADMIN, hoje);
+        mudanca.definirAnterior(atual.getProximoPlano(), atual.getProximaPeriodicidade(),
+                atual.getProximoPlano().calcularValor(atual.getProximaPeriodicidade(), atual.getProximoCupom()));
+        mudanca.definirNovo(atual.getPlano(), atual.getPeriodicidade(), atual.getValor());
+        return mudanca;
     }
 
     private boolean isPlanoVigente(Assinatura atual, Escolha nova) {
@@ -285,6 +333,24 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         pagamento.setStatus(StatusPagamento.APROVADO);
         pagamento.setDataPagamento(data);
         return pagamento;
+    }
+
+    static MudancaAssinatura novaMudanca(Assinatura assinatura, TipoMudancaAssinatura tipo,
+            OrigemMudancaAssinatura origem, LocalDate data) {
+        MudancaAssinatura mudanca = new MudancaAssinatura();
+        mudanca.setAssinatura(assinatura);
+        mudanca.setTipo(tipo);
+        mudanca.setOrigem(origem);
+        mudanca.setData(data);
+        return mudanca;
+    }
+
+    // mudanca que parte do plano vigente (chamar antes de alterar a assinatura)
+    static MudancaAssinatura mudancaDoVigente(Assinatura assinatura, TipoMudancaAssinatura tipo,
+            OrigemMudancaAssinatura origem, LocalDate data) {
+        MudancaAssinatura mudanca = novaMudanca(assinatura, tipo, origem, data);
+        mudanca.definirAnterior(assinatura.getPlano(), assinatura.getPeriodicidade(), assinatura.getValor());
+        return mudanca;
     }
 
     // plano Gratuito: sem cobranca, sem cupom e sem forma de pagamento

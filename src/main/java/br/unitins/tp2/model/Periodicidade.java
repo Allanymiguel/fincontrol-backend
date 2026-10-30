@@ -1,5 +1,7 @@
 package br.unitins.tp2.model;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Objects;
 
@@ -30,6 +32,13 @@ public enum Periodicidade implements EnumComId {
     // data de fim de um ciclo que comeca em inicio (1 mes ou 1 ano depois)
     public LocalDate somarCiclo(LocalDate inicio) {
         return this == ANUAL ? inicio.plusYears(1) : inicio.plusMonths(1);
+    }
+
+    // equivalente mensal do valor de uma cobranca nesta periodicidade (anual / 12), em centavos
+    public BigDecimal valorMensal(BigDecimal valorCobranca) {
+        if (this == ANUAL)
+            return valorCobranca.divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
+        return valorCobranca.setScale(2, RoundingMode.HALF_UP);
     }
 
     public static Periodicidade valueOf(Long id) {

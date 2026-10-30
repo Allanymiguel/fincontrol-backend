@@ -123,4 +123,8 @@ public class Plano extends DefaultEntity {
         BigDecimal fatorPago = CEM.subtract(cupom.getPercentualDesconto()).divide(CEM);
         return preco.multiply(fatorPago).setScale(2, RoundingMode.HALF_UP);
     }
+
+    public boolean isGratuito() {
+        return NOME_GRATUITO.equals(nome);
+    }
 }

@@ -18,12 +18,14 @@ import br.unitins.tp2.model.AtividadeMei;
 import br.unitins.tp2.model.EnumComId;
 import br.unitins.tp2.model.EscopoTransacao;
 import br.unitins.tp2.model.FormaPagamento;
+import br.unitins.tp2.model.OrigemMudancaAssinatura;
 import br.unitins.tp2.model.Papel;
 import br.unitins.tp2.model.PerfilFiscal;
 import br.unitins.tp2.model.Periodicidade;
 import br.unitins.tp2.model.StatusAssinatura;
 import br.unitins.tp2.model.StatusPagamento;
 import br.unitins.tp2.model.TipoContato;
+import br.unitins.tp2.model.TipoMudancaAssinatura;
 import br.unitins.tp2.model.TipoTransacao;
 
 // Os enums vao para o banco pelo codigo explicito (getId), nunca pelo nome nem pelo ordinal.
@@ -35,7 +37,8 @@ class EnumIdConverterTest {
             new AtividadeMeiConverter(), new EscopoTransacaoConverter(), new FormaPagamentoConverter(),
             new PapelConverter(), new PerfilFiscalConverter(), new PeriodicidadeConverter(),
             new StatusAssinaturaConverter(), new StatusPagamentoConverter(), new TipoContatoConverter(),
-            new TipoTransacaoConverter());
+            new TipoTransacaoConverter(), new TipoMudancaAssinaturaConverter(),
+            new OrigemMudancaAssinaturaConverter());
 
     // codigo esperado de cada constante: o contrato com o banco (import.sql) e com a API (idXxx)
     private static final Map<Enum<?>, Integer> CODIGOS = new LinkedHashMap<>();
@@ -67,6 +70,18 @@ class EnumIdConverterTest {
         CODIGOS.put(TipoContato.FORNECEDOR, 2);
         CODIGOS.put(TipoTransacao.RECEITA, 1);
         CODIGOS.put(TipoTransacao.DESPESA, 2);
+        CODIGOS.put(TipoMudancaAssinatura.CADASTRO, 1);
+        CODIGOS.put(TipoMudancaAssinatura.UPGRADE, 2);
+        CODIGOS.put(TipoMudancaAssinatura.TROCA_IMEDIATA, 3);
+        CODIGOS.put(TipoMudancaAssinatura.DOWNGRADE_AGENDADO, 4);
+        CODIGOS.put(TipoMudancaAssinatura.CANCELAMENTO_AGENDADO, 5);
+        CODIGOS.put(TipoMudancaAssinatura.AGENDAMENTO_DESFEITO, 6);
+        CODIGOS.put(TipoMudancaAssinatura.DOWNGRADE_APLICADO, 7);
+        CODIGOS.put(TipoMudancaAssinatura.CANCELAMENTO_APLICADO, 8);
+        CODIGOS.put(TipoMudancaAssinatura.VOLTA_GRATUITO_CONTA_DESATIVADA, 9);
+        CODIGOS.put(OrigemMudancaAssinatura.CADASTRO, 1);
+        CODIGOS.put(OrigemMudancaAssinatura.ADMIN, 2);
+        CODIGOS.put(OrigemMudancaAssinatura.COBRANCA, 3);
     }
 
     // enum so de teste com codigos fora da ordem das constantes
