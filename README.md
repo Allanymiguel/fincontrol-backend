@@ -57,6 +57,7 @@ Usuários (senha = primeiro nome em minúsculas + `12345`, ex.: `carla12345`):
 | Cobrança: disparo manual ("cobrar até" uma data) e histórico | `POST /admin/cobrancas/processar?data=`, `GET /execucoes`, `/resumo`, `/dias-sem-execucao` |
 | Pagamentos: lista com filtros, totais e estorno | `GET /admin/pagamentos`, `/resumo`, `POST /{id}/estorno` |
 | Simulação de recusa da cobrança (sem gateway) | `PATCH /admin/usuarios/{id}/assinatura/simulacao-recusa` |
+| Cupons: limite de usos, planos e métricas | `GET/POST/PUT /cupons` (`limiteUsos`, `idPlanos`, `usos`, `descontoConcedido`) |
 | Base de CEPs de clientes | `GET/PUT /admin/ceps`, `/verificacao`, `/revalidacao`, `/importacao`, `/configuracao`, `/consultas` |
 | Endereço do cadastro de cliente (público) | `GET /enderecos-cliente/cep/{cep}`, `/municipios`, `/sugestoes` |
 
@@ -64,6 +65,12 @@ Pagamento simulado (RN15): com a simulação de recusa ligada, a cobrança grava
 assinatura fica **pendente** com o plano atual e o período parado, e a cobrança seguinte tenta de novo; na 3ª
 recusa seguida volta ao Gratuito. Cada tentativa vai para o histórico da assinatura e para a linha do tempo.
 O **estorno** só mexe no registro financeiro: a receita do mês do estorno diminui, a assinatura não muda.
+Cancelar uma assinatura pendente volta ao Gratuito na hora; a troca de plano fica bloqueada até a cobrança passar.
+
+**Cupons**: `limiteUsos` nulo = sem limite e nenhum plano marcado = todos (os cupons antigos continuam assim).
+Uso = adesão: a assinatura com o cupom vigente, agendado ou já pago com ele; desfazer um agendamento libera o
+uso. As regras valem na troca de plano e na simulação. O desconto de cada cobrança fica gravado no pagamento
+(`valorDesconto`), e as métricas somam só os pagamentos aprovados.
 
 Toda listagem é paginada: o corpo traz o `PageResponse` e a resposta repete a paginação nos headers
 `X-Page`, `X-Page-Size` e `X-Total-Count`. As fórmulas dos indicadores estão no Swagger.
