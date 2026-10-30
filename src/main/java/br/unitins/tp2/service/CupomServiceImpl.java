@@ -1,5 +1,6 @@
 package br.unitins.tp2.service;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -9,9 +10,11 @@ import br.unitins.tp2.exception.Problem;
 import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.model.AcaoAuditoria;
 import br.unitins.tp2.model.Cupom;
+import br.unitins.tp2.model.Plano;
 import br.unitins.tp2.model.TipoAlvoAuditoria;
 import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.repository.PagamentoRepository;
+import br.unitins.tp2.repository.PlanoRepository;
 import br.unitins.tp2.repository.CupomRepository;
 import br.unitins.tp2.util.RetratoAuditoria;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -32,6 +35,9 @@ public class CupomServiceImpl implements CupomService {
 
     @Inject
     PagamentoRepository pagamentoRepository;
+
+    @Inject
+    PlanoRepository planoRepository;
 
     @Override
     @Transactional
@@ -101,10 +107,25 @@ public class CupomServiceImpl implements CupomService {
         return cupomRepository.findByCodigo(codigo).count();
     }
 
+    @Override
+    public Metricas metricas(Cupom cupom) {
+        Object[] pagamentos = cupomRepository.pagamentosEDesconto(cupom.getId());
+        return new Metricas(cupomRepository.countAdesoes(cupom.getId()), (Long) pagamentos[0],
+                CupomRepository.comoValor(pagamentos[1]).setScale(2));
+    }
+
     // Regras que a Bean Validation (anotacoes do DTO) nao consegue checar sozinha
     private void validarDados(CupomRequestDTO dto, Long idCupom) {
         if (cupomRepository.findByCodigoExceptId(normalizarCodigo(dto.codigo()), idCupom) != null)
             throw ValidationException.of("codigo", "Já existe um cupom cadastrado com esse código.");
+
+        // o limite nao pode ficar abaixo das adesoes que ja aconteceram
+        if (idCupom != null && dto.limiteUsos() != null) {
+            long usos = cupomRepository.countAdesoes(idCupom);
+            if (dto.limiteUsos() < usos)
+                throw ValidationException.of("limiteUsos", "O cupom já foi usado " + usos
+                        + (usos == 1 ? " vez" : " vezes") + ": o limite não pode ser menor que isso.");
+        }
     }
 
     private void aplicarDados(Cupom destino, CupomRequestDTO origem) {
@@ -112,6 +133,25 @@ public class CupomServiceImpl implements CupomService {
         destino.setPercentualDesconto(origem.percentualDesconto());
         destino.setValidade(origem.validade());
         destino.setAtivo(origem.ativo());
+        destino.setLimiteUsos(origem.limiteUsos());
+        destino.getPlanos().clear();
+        destino.getPlanos().addAll(buscarPlanosOuFalhar(origem.idPlanos()));
+    }
+
+    // vazio = todos os planos; o Gratuito nao entra (nao tem preco para descontar)
+    private LinkedHashSet<Plano> buscarPlanosOuFalhar(List<Long> idPlanos) {
+        LinkedHashSet<Plano> planos = new LinkedHashSet<>();
+        if (idPlanos == null)
+            return planos;
+        for (Long idPlano : idPlanos) {
+            Plano plano = idPlano == null ? null : planoRepository.findById(idPlano);
+            if (plano == null)
+                throw ValidationException.of("idPlanos", "Plano não encontrado.");
+            if (plano.isGratuito())
+                throw ValidationException.of("idPlanos", "O plano Gratuito não tem preço para descontar.");
+            planos.add(plano);
+        }
+        return planos;
     }
 
     private String normalizarCodigo(String codigo) {

@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.ColumnDefault;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -33,6 +35,12 @@ public class Pagamento extends DefaultEntity {
     @Column(nullable = false, precision = 14, scale = 2)
     private BigDecimal valor;
 
+    // quanto o cupom tirou do preco cheio nesta cobranca (zero sem cupom). Guardado no momento da
+    // cobranca: editar o percentual ou o preco depois nao muda o desconto ja concedido
+    @Column(nullable = false, precision = 14, scale = 2)
+    @ColumnDefault("0")
+    private BigDecimal valorDesconto = BigDecimal.ZERO.setScale(2);
+
     @Column(nullable = false)
     private FormaPagamento formaPagamento;
 
@@ -50,6 +58,14 @@ public class Pagamento extends DefaultEntity {
 
     @Column(length = 160)
     private String estornadoPor;
+
+    public BigDecimal getValorDesconto() {
+        return valorDesconto;
+    }
+
+    public void setValorDesconto(BigDecimal valorDesconto) {
+        this.valorDesconto = valorDesconto;
+    }
 
     public LocalDateTime getDataEstorno() {
         return dataEstorno;

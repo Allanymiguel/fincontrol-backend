@@ -23,6 +23,7 @@ public final class PagamentoResponseMapper {
                 pagamento.getCupom() == null ? null : pagamento.getCupom().getId(),
                 pagamento.getCupom() == null ? null : pagamento.getCupom().getCodigo(),
                 pagamento.getValor(),
+                pagamento.getValorDesconto(),
                 pagamento.getFormaPagamento(),
                 pagamento.getStatus(),
                 pagamento.getDataEstorno(),

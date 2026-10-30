@@ -36,6 +36,7 @@ import br.unitins.tp2.repository.MudancaAssinaturaRepository;
 import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.PlanoRepository;
 import br.unitins.tp2.repository.UsuarioRepository;
+import br.unitins.tp2.util.RegrasCupom;
 import br.unitins.tp2.util.RetratoAuditoria;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -382,6 +383,10 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         pagamento.setPeriodicidade(assinatura.getPeriodicidade());
         pagamento.setCupom(assinatura.getCupom());
         pagamento.setValor(assinatura.getValor());
+        if (assinatura.getCupom() != null) {
+            BigDecimal cheio = assinatura.getPlano().calcularValor(assinatura.getPeriodicidade(), null);
+            pagamento.setValorDesconto(cheio.subtract(assinatura.getValor()).max(ZERO));
+        }
         pagamento.setFormaPagamento(assinatura.getFormaPagamento());
         pagamento.setStatus(StatusPagamento.APROVADO);
         pagamento.setDataPagamento(data);
@@ -469,9 +474,13 @@ public class AssinaturaServiceImpl implements AssinaturaService {
             throw ValidationException.of("idPeriodicidade", "Periodicidade não encontrada.");
 
         Cupom cupom = null;
-        if (dto.idCupom() != null)
+        if (dto.idCupom() != null) {
             cupom = dto.idCupom().equals(idDo(atual.getCupom())) ? atual.getCupom()
                     : buscarCupomValidoOuFalhar(dto.idCupom());
+            // o plano e o cupom vigentes juntos (desfazer um agendamento) continuam aceitos como estao
+            if (!(cupom == atual.getCupom() && plano == atual.getPlano()))
+                validarRegrasDoCupom(cupom, plano, atual);
+        }
 
         BigDecimal valor = plano.calcularValor(periodicidade, cupom);
 
@@ -518,6 +527,15 @@ public class AssinaturaServiceImpl implements AssinaturaService {
             throw ValidationException.of("idCupom", "Este cupom está expirado.");
 
         return cupom;
+    }
+
+    // restricao por plano e limite de usos (uso = adesao da assinatura; quem ja aderiu nao gasta outro)
+    private void validarRegrasDoCupom(Cupom cupom, Plano plano, Assinatura atual) {
+        boolean jaAderiu = cupom.getLimiteUsos() != null && cupomRepository.jaAderiu(cupom.getId(), atual.getId());
+        String motivo = RegrasCupom.motivoParaNaoAplicar(cupom, plano, jaAderiu,
+                () -> cupomRepository.countAdesoes(cupom.getId()));
+        if (motivo != null)
+            throw ValidationException.of("idCupom", motivo);
     }
 
     private static Long idDo(Cupom cupom) {

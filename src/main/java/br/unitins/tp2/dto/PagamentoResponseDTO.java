@@ -22,6 +22,8 @@ public record PagamentoResponseDTO(
     Long idCupom,
     String codigoCupom,
     BigDecimal valor,
+    // quanto o cupom tirou do preco cheio nesta cobranca (zero sem cupom)
+    BigDecimal valorDesconto,
     FormaPagamento formaPagamento,
     StatusPagamento status,
     // nulos se nao foi estornado

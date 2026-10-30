@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import br.unitins.tp2.dto.AlteracaoAuditoriaDTO;
 import br.unitins.tp2.model.Cupom;
+import br.unitins.tp2.model.Plano;
 import br.unitins.tp2.model.Papel;
 import br.unitins.tp2.model.Usuario;
 
@@ -97,8 +98,15 @@ class AlteracoesAuditoriaTest {
         cupom.setValidade(java.time.LocalDate.of(2026, 11, 30));
         cupom.setAtivo(true);
 
-        assertEquals(Map.of("Código", "BLACKFRIDAY", "Desconto (%)", "30,00", "Validade", "30/11/2026", "Ativo", "Sim"),
-                RetratoAuditoria.de(cupom));
+        assertEquals(Map.of("Código", "BLACKFRIDAY", "Desconto (%)", "30,00", "Validade", "30/11/2026", "Ativo", "Sim",
+                "Limite de usos", "Sem limite", "Planos", "Todos"), RetratoAuditoria.de(cupom));
+
+        Plano essencial = new Plano();
+        essencial.setNome("Essencial");
+        cupom.setLimiteUsos(100);
+        cupom.getPlanos().add(essencial);
+        assertEquals("100", RetratoAuditoria.de(cupom).get("Limite de usos"));
+        assertEquals("Essencial", RetratoAuditoria.de(cupom).get("Planos"));
     }
 
     private static Map<String, String> retrato(String codigo, String desconto, String ativo) {

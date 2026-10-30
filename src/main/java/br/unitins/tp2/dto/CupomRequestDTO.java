@@ -2,10 +2,12 @@ package br.unitins.tp2.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -25,6 +27,13 @@ public record CupomRequestDTO(
     LocalDate validade,
 
     @NotNull(message = "O campo ativo deve ser informado.")
-    Boolean ativo
+    Boolean ativo,
+
+    // opcional: nulo = sem limite
+    @Min(value = 1, message = "O limite de usos deve ser pelo menos 1 (deixe vazio para não limitar).")
+    Integer limiteUsos,
+
+    // opcional: vazio ou nulo = vale para todos os planos
+    List<Long> idPlanos
 ) {
 }

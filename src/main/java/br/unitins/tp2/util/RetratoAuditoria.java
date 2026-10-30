@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import br.unitins.tp2.model.Assinatura;
 import br.unitins.tp2.model.CepLocal;
@@ -48,7 +49,16 @@ public final class RetratoAuditoria {
         r.put("Desconto (%)", numero(cupom.getPercentualDesconto()));
         r.put("Validade", data(cupom.getValidade()));
         r.put("Ativo", simNao(cupom.getAtivo()));
+        r.put("Limite de usos", cupom.getLimiteUsos() == null ? "Sem limite" : cupom.getLimiteUsos().toString());
+        r.put("Planos", nomesDosPlanos(cupom));
         return r;
+    }
+
+    // "Essencial, Empreendedor" ou "Todos"
+    public static String nomesDosPlanos(Cupom cupom) {
+        if (cupom.getPlanos().isEmpty())
+            return "Todos";
+        return cupom.getPlanos().stream().map(Plano::getNome).collect(Collectors.joining(", "));
     }
 
     public static Map<String, String> de(ParametroFiscal parametro) {

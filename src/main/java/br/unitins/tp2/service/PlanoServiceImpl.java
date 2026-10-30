@@ -11,6 +11,7 @@ import br.unitins.tp2.model.AcaoAuditoria;
 import br.unitins.tp2.model.Plano;
 import br.unitins.tp2.model.TipoAlvoAuditoria;
 import br.unitins.tp2.repository.AssinaturaRepository;
+import br.unitins.tp2.repository.CupomRepository;
 import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.PlanoRepository;
 import br.unitins.tp2.util.RetratoAuditoria;
@@ -32,6 +33,9 @@ public class PlanoServiceImpl implements PlanoService {
 
     @Inject
     PagamentoRepository pagamentoRepository;
+
+    @Inject
+    CupomRepository cupomRepository;
 
     @Override
     @Transactional
@@ -66,6 +70,10 @@ public class PlanoServiceImpl implements PlanoService {
         // a mensagem vai no detail para aparecer no aviso do front (nao ha campo ligado a exclusao)
         if (assinaturaRepository.countByPlano(id) > 0 || pagamentoRepository.countByPlano(id) > 0) {
             String mensagem = "Este plano tem assinaturas e não pode ser excluído. Desative-o para não aceitar novas.";
+            throw new ValidationException(mensagem, List.of(new Problem.FieldError("ativo", mensagem)));
+        }
+        if (cupomRepository.countByPlano(id) > 0) {
+            String mensagem = "Há cupons restritos a este plano. Tire o plano desses cupons antes de excluí-lo.";
             throw new ValidationException(mensagem, List.of(new Problem.FieldError("ativo", mensagem)));
         }
 

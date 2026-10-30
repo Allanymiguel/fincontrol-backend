@@ -43,18 +43,18 @@ public class CupomResource {
         List<Cupom> cupons = hasCodigo ? service.findByCodigo(codigo, page, pageSize) : service.findAll(page, pageSize);
         long totalItems = hasCodigo ? service.count(codigo) : service.count();
 
-        return PageResponse.of(cupons, page, pageSize, totalItems, CupomResponseMapper::toResponse);
+        return PageResponse.of(cupons, page, pageSize, totalItems, this::toResponse);
     }
 
     @GET
     @Path("/{id}")
     public CupomResponseDTO buscarPorId(@PathParam("id") Long id) {
-        return CupomResponseMapper.toResponse(service.findById(id));
+        return toResponse(service.findById(id));
     }
 
     @POST
     public CupomResponseDTO incluir(CupomRequestDTO dto) {
-        return CupomResponseMapper.toResponse(service.create(dto));
+        return toResponse(service.create(dto));
     }
 
     @PUT
@@ -67,5 +67,10 @@ public class CupomResource {
     @Path("/{id}")
     public void apagar(@PathParam("id") Long id) {
         service.delete(id);
+    }
+
+    // com as metricas: usos (adesoes, contam para o limite), pagamentos aprovados e desconto concedido
+    private CupomResponseDTO toResponse(Cupom cupom) {
+        return CupomResponseMapper.toResponse(cupom, service.metricas(cupom));
     }
 }
