@@ -21,6 +21,8 @@ import br.unitins.tp2.model.EscopoTransacao;
 import br.unitins.tp2.model.FonteConsultaCep;
 import br.unitins.tp2.model.FormaPagamento;
 import br.unitins.tp2.model.OrigemCep;
+import br.unitins.tp2.model.OrigemExecucaoCobranca;
+import br.unitins.tp2.model.StatusExecucaoCobranca;
 import br.unitins.tp2.model.ResultadoConsultaCep;
 import br.unitins.tp2.model.SituacaoCep;
 import br.unitins.tp2.model.OrigemMudancaAssinatura;
@@ -46,7 +48,8 @@ class EnumIdConverterTest {
             new TipoTransacaoConverter(), new TipoMudancaAssinaturaConverter(),
             new OrigemMudancaAssinaturaConverter(), new AcaoAuditoriaConverter(), new TipoAlvoAuditoriaConverter(),
             new OrigemCepConverter(), new SituacaoCepConverter(), new FonteConsultaCepConverter(),
-            new ResultadoConsultaCepConverter());
+            new ResultadoConsultaCepConverter(), new OrigemExecucaoCobrancaConverter(),
+            new StatusExecucaoCobrancaConverter());
 
     // codigo esperado de cada constante: o contrato com o banco (import.sql) e com a API (idXxx)
     private static final Map<Enum<?>, Integer> CODIGOS = new LinkedHashMap<>();
@@ -99,7 +102,7 @@ class EnumIdConverterTest {
                 AcaoAuditoria.EXCLUSAO_PARAMETRO_FISCAL, AcaoAuditoria.CRIACAO_FAIXA_IRPF,
                 AcaoAuditoria.ALTERACAO_FAIXA_IRPF, AcaoAuditoria.EXCLUSAO_FAIXA_IRPF, AcaoAuditoria.CORRECAO_CEP,
                 AcaoAuditoria.VERIFICACAO_CEP, AcaoAuditoria.REVALIDACAO_CEP, AcaoAuditoria.IMPORTACAO_CEP,
-                AcaoAuditoria.ALTERACAO_API_CEP };
+                AcaoAuditoria.ALTERACAO_API_CEP, AcaoAuditoria.COBRANCA_MANUAL };
         for (int i = 0; i < acoes.length; i++)
             CODIGOS.put(acoes[i], i + 1);
         CODIGOS.put(TipoAlvoAuditoria.USUARIO, 1);
@@ -110,6 +113,12 @@ class EnumIdConverterTest {
         CODIGOS.put(TipoAlvoAuditoria.FAIXA_IRPF, 6);
         CODIGOS.put(TipoAlvoAuditoria.CEP, 7);
         CODIGOS.put(TipoAlvoAuditoria.CONFIGURACAO, 8);
+        CODIGOS.put(TipoAlvoAuditoria.COBRANCA, 9);
+        CODIGOS.put(OrigemExecucaoCobranca.AUTOMATICA, 1);
+        CODIGOS.put(OrigemExecucaoCobranca.MANUAL, 2);
+        CODIGOS.put(StatusExecucaoCobranca.SUCESSO, 1);
+        CODIGOS.put(StatusExecucaoCobranca.PARCIAL, 2);
+        CODIGOS.put(StatusExecucaoCobranca.FALHA, 3);
         CODIGOS.put(OrigemCep.API, 1);
         CODIGOS.put(OrigemCep.MANUAL, 2);
         CODIGOS.put(OrigemCep.IMPORTACAO, 3);

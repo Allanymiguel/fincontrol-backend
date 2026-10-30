@@ -31,7 +31,8 @@ public enum AcaoAuditoria implements EnumComId {
     VERIFICACAO_CEP(22L, "Verificação de CEP"),
     REVALIDACAO_CEP(23L, "Revalidação de CEP"),
     IMPORTACAO_CEP(24L, "Importação de CEPs"),
-    ALTERACAO_API_CEP(25L, "Consulta externa de CEP ligada/desligada");
+    ALTERACAO_API_CEP(25L, "Consulta externa de CEP ligada/desligada"),
+    COBRANCA_MANUAL(26L, "Cobrança disparada manualmente");
 
     private final Long ID;
     private final String NOME;

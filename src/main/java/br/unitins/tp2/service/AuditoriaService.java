@@ -26,6 +26,12 @@ public interface AuditoriaService {
     // a requisicao atual e de um admin autenticado (o cadastro publico nao e auditado)
     boolean isAdminLogado();
 
+    // admin dono do token (keycloakId nulo no modo dev sem login)
+    record Admin(String keycloakId, String nome, String email) {
+    }
+
+    Admin adminLogado();
+
     List<EventoAuditoria> buscar(Filtro filtro, int page, int pageSize);
 
     long contar(Filtro filtro);

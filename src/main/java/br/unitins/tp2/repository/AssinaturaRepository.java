@@ -28,6 +28,15 @@ public class AssinaturaRepository implements PanacheRepository<Assinatura> {
                 + "left join fetch a.proximoPlano left join fetch a.proximoCupom");
     }
 
+    // ids das com cobranca vencida ate a data: a cobranca processa cada uma na propria transacao
+    public List<Long> findIdsComCobrancaAte(LocalDate data) {
+        return getEntityManager()
+                .createQuery("select a.id from Assinatura a where a.dataProximaCobranca <= :data "
+                        + "order by a.dataProximaCobranca, a.id", Long.class)
+                .setParameter("data", data)
+                .getResultList();
+    }
+
     // com cobranca vencida ate a data (inclusive): o agendador processa estas
     public List<Assinatura> findComCobrancaAte(LocalDate data) {
         return list("dataProximaCobranca <= ?1 order by dataProximaCobranca, id", data);

@@ -14,7 +14,8 @@ public enum TipoAlvoAuditoria implements EnumComId {
     PARAMETRO_FISCAL(5L, "Parâmetro fiscal"),
     FAIXA_IRPF(6L, "Faixa do IRPF"),
     CEP(7L, "CEP"),
-    CONFIGURACAO(8L, "Configuração");
+    CONFIGURACAO(8L, "Configuração"),
+    COBRANCA(9L, "Cobrança");
 
     private final Long ID;
     private final String NOME;

@@ -67,18 +67,22 @@ public class AuditoriaServiceImpl implements AuditoriaService {
     }
 
     // admin = dono do token (sub); nome e e-mail vem do perfil local, ou das claims do token
-    private void preencherAdmin(EventoAuditoria evento) {
+    @Override
+    public Admin adminLogado() {
         String keycloakId = identity.isAnonymous() ? null : jwt.getSubject();
-        if (keycloakId == null || keycloakId.isBlank()) {
-            evento.setAdminNome(SEM_LOGIN);
-            return;
-        }
-        evento.setAdminKeycloakId(keycloakId);
+        if (keycloakId == null || keycloakId.isBlank())
+            return new Admin(null, SEM_LOGIN, null);
         Usuario admin = usuarioRepository.findByKeycloakId(keycloakId);
         String nome = admin != null ? admin.getNome() : jwt.getClaim("name");
         String email = admin != null ? admin.getEmail() : jwt.getClaim("email");
-        evento.setAdminNome(nome != null ? nome : "Administrador");
-        evento.setAdminEmail(email);
+        return new Admin(keycloakId, nome != null ? nome : "Administrador", email);
+    }
+
+    private void preencherAdmin(EventoAuditoria evento) {
+        Admin admin = adminLogado();
+        evento.setAdminKeycloakId(admin.keycloakId());
+        evento.setAdminNome(admin.nome());
+        evento.setAdminEmail(admin.email());
     }
 
     @Override
