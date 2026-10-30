@@ -18,7 +18,11 @@ import br.unitins.tp2.model.AcaoAuditoria;
 import br.unitins.tp2.model.AtividadeMei;
 import br.unitins.tp2.model.EnumComId;
 import br.unitins.tp2.model.EscopoTransacao;
+import br.unitins.tp2.model.FonteConsultaCep;
 import br.unitins.tp2.model.FormaPagamento;
+import br.unitins.tp2.model.OrigemCep;
+import br.unitins.tp2.model.ResultadoConsultaCep;
+import br.unitins.tp2.model.SituacaoCep;
 import br.unitins.tp2.model.OrigemMudancaAssinatura;
 import br.unitins.tp2.model.Papel;
 import br.unitins.tp2.model.PerfilFiscal;
@@ -40,7 +44,9 @@ class EnumIdConverterTest {
             new PapelConverter(), new PerfilFiscalConverter(), new PeriodicidadeConverter(),
             new StatusAssinaturaConverter(), new StatusPagamentoConverter(), new TipoContatoConverter(),
             new TipoTransacaoConverter(), new TipoMudancaAssinaturaConverter(),
-            new OrigemMudancaAssinaturaConverter(), new AcaoAuditoriaConverter(), new TipoAlvoAuditoriaConverter());
+            new OrigemMudancaAssinaturaConverter(), new AcaoAuditoriaConverter(), new TipoAlvoAuditoriaConverter(),
+            new OrigemCepConverter(), new SituacaoCepConverter(), new FonteConsultaCepConverter(),
+            new ResultadoConsultaCepConverter());
 
     // codigo esperado de cada constante: o contrato com o banco (import.sql) e com a API (idXxx)
     private static final Map<Enum<?>, Integer> CODIGOS = new LinkedHashMap<>();
@@ -91,7 +97,9 @@ class EnumIdConverterTest {
                 AcaoAuditoria.CRIACAO_CUPOM, AcaoAuditoria.ALTERACAO_CUPOM, AcaoAuditoria.EXCLUSAO_CUPOM,
                 AcaoAuditoria.CRIACAO_PARAMETRO_FISCAL, AcaoAuditoria.ALTERACAO_PARAMETRO_FISCAL,
                 AcaoAuditoria.EXCLUSAO_PARAMETRO_FISCAL, AcaoAuditoria.CRIACAO_FAIXA_IRPF,
-                AcaoAuditoria.ALTERACAO_FAIXA_IRPF, AcaoAuditoria.EXCLUSAO_FAIXA_IRPF };
+                AcaoAuditoria.ALTERACAO_FAIXA_IRPF, AcaoAuditoria.EXCLUSAO_FAIXA_IRPF, AcaoAuditoria.CORRECAO_CEP,
+                AcaoAuditoria.VERIFICACAO_CEP, AcaoAuditoria.REVALIDACAO_CEP, AcaoAuditoria.IMPORTACAO_CEP,
+                AcaoAuditoria.ALTERACAO_API_CEP };
         for (int i = 0; i < acoes.length; i++)
             CODIGOS.put(acoes[i], i + 1);
         CODIGOS.put(TipoAlvoAuditoria.USUARIO, 1);
@@ -100,6 +108,19 @@ class EnumIdConverterTest {
         CODIGOS.put(TipoAlvoAuditoria.CUPOM, 4);
         CODIGOS.put(TipoAlvoAuditoria.PARAMETRO_FISCAL, 5);
         CODIGOS.put(TipoAlvoAuditoria.FAIXA_IRPF, 6);
+        CODIGOS.put(TipoAlvoAuditoria.CEP, 7);
+        CODIGOS.put(TipoAlvoAuditoria.CONFIGURACAO, 8);
+        CODIGOS.put(OrigemCep.API, 1);
+        CODIGOS.put(OrigemCep.MANUAL, 2);
+        CODIGOS.put(OrigemCep.IMPORTACAO, 3);
+        CODIGOS.put(SituacaoCep.VERIFICADO, 1);
+        CODIGOS.put(SituacaoCep.NAO_VERIFICADO, 2);
+        CODIGOS.put(SituacaoCep.DIVERGENTE, 3);
+        CODIGOS.put(FonteConsultaCep.BASE_LOCAL, 1);
+        CODIGOS.put(FonteConsultaCep.VIACEP, 2);
+        CODIGOS.put(ResultadoConsultaCep.ENCONTRADO, 1);
+        CODIGOS.put(ResultadoConsultaCep.NAO_ENCONTRADO, 2);
+        CODIGOS.put(ResultadoConsultaCep.FALHA, 3);
     }
 
     // enum so de teste com codigos fora da ordem das constantes

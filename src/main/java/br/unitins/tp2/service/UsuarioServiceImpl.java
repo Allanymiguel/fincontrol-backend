@@ -19,8 +19,8 @@ import br.unitins.tp2.model.AcaoAuditoria;
 import br.unitins.tp2.model.AtividadeMei;
 import br.unitins.tp2.model.Categoria;
 import br.unitins.tp2.model.CategoriaPadrao;
+import br.unitins.tp2.model.CepLocal;
 import br.unitins.tp2.model.Endereco;
-import br.unitins.tp2.model.Municipio;
 import br.unitins.tp2.model.Papel;
 import br.unitins.tp2.model.PerfilFiscal;
 import br.unitins.tp2.model.TipoAlvoAuditoria;
@@ -29,7 +29,7 @@ import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.repository.CategoriaPadraoRepository;
 import br.unitins.tp2.repository.CategoriaRepository;
 import br.unitins.tp2.repository.ContatoRepository;
-import br.unitins.tp2.repository.MunicipioRepository;
+import br.unitins.tp2.repository.CepLocalRepository;
 import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.TransacaoRepository;
 import br.unitins.tp2.repository.UsuarioRepository;
@@ -73,11 +73,15 @@ public class UsuarioServiceImpl implements UsuarioService {
     ContatoRepository contatoRepository;
 
     @Inject
-    MunicipioRepository municipioRepository;
+    EnderecoClienteService enderecoClienteService;
+
+    @Inject
+    CepLocalRepository cepLocalRepository;
 
     // dados fiscais e endereco ja validados (cadastro e edicao completos)
+    // cepNovo = CEP digitado no modo manual, salvo na base local junto com o usuario
     private record DadosCompletos(String documento, String telefone, PerfilFiscal perfil, AtividadeMei atividade,
-            Endereco endereco) {
+            Endereco endereco, CepLocal cepNovo) {
     }
 
     @Override
@@ -318,27 +322,23 @@ public class UsuarioServiceImpl implements UsuarioService {
                 throw ValidationException.of("idAtividadeMei", "Informe a atividade do MEI.");
         }
 
-        Municipio municipio = municipioRepository.findById(idMunicipio);
-        if (municipio == null)
-            throw ValidationException.of("idMunicipio", "Município não encontrado. Consulte o CEP novamente.");
+        // base propria de enderecos (item 8): valida antes de qualquer conta ser criada no Keycloak
+        EnderecoClienteService.EnderecoResolvido endereco = enderecoClienteService.resolver(cep, logradouro, numero,
+                complemento, bairro, idMunicipio);
 
-        Endereco endereco = new Endereco();
-        endereco.setCep(cep);
-        endereco.setLogradouro(logradouro.trim());
-        endereco.setNumero(numero.trim());
-        endereco.setComplemento(vazioParaNull(complemento));
-        endereco.setBairro(bairro.trim());
-        endereco.setMunicipio(municipio);
-
-        return new DadosCompletos(documento, vazioParaNull(telefone), perfil, atividade, endereco);
+        return new DadosCompletos(documento, vazioParaNull(telefone), perfil, atividade, endereco.endereco(),
+                endereco.cepNovo());
     }
 
+    // roda na transacao do perfil local: usuario completo e endereco sao salvos juntos
     private void aplicar(Usuario usuario, DadosCompletos dados) {
         usuario.setDocumento(dados.documento());
         usuario.setTelefone(dados.telefone());
         usuario.setPerfilFiscal(dados.perfil());
         usuario.setAtividadeMei(dados.atividade());
         usuario.setEndereco(dados.endereco());
+        if (dados.cepNovo() != null && cepLocalRepository.findByCep(dados.cepNovo().getCep()) == null)
+            cepLocalRepository.persist(dados.cepNovo());
     }
 
     private PerfilFiscal buscarPerfilOuFalhar(Long idPerfil) {

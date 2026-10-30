@@ -26,7 +26,12 @@ public enum AcaoAuditoria implements EnumComId {
     EXCLUSAO_PARAMETRO_FISCAL(17L, "Exclusão de parâmetro fiscal"),
     CRIACAO_FAIXA_IRPF(18L, "Criação de faixa do IRPF"),
     ALTERACAO_FAIXA_IRPF(19L, "Alteração de faixa do IRPF"),
-    EXCLUSAO_FAIXA_IRPF(20L, "Exclusão de faixa do IRPF");
+    EXCLUSAO_FAIXA_IRPF(20L, "Exclusão de faixa do IRPF"),
+    CORRECAO_CEP(21L, "Correção de CEP"),
+    VERIFICACAO_CEP(22L, "Verificação de CEP"),
+    REVALIDACAO_CEP(23L, "Revalidação de CEP"),
+    IMPORTACAO_CEP(24L, "Importação de CEPs"),
+    ALTERACAO_API_CEP(25L, "Consulta externa de CEP ligada/desligada");
 
     private final Long ID;
     private final String NOME;
