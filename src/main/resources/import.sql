@@ -1,40 +1,9 @@
 -- Dados de desenvolvimento (recriados a cada subida do back pelo drop-and-create do Hibernate).
--- Ordem respeita as FKs: estado -> municipio -> usuario -> plano/cupom -> categoria/transacao/contato -> assinatura -> pagamento -> mudanca.
+-- Ordem respeita as FKs: (referencia.sql) -> usuario -> plano/cupom -> categoria/transacao/contato -> assinatura -> pagamento -> mudanca.
 -- Datas pensadas para a demonstracao de 30/10/2026: nenhuma cobranca vence antes de 01/11/2026.
 
--- =========================================================================
--- estados (municipios sao criados sob demanda pela consulta de CEP)
--- =========================================================================
-insert into estado (nome, sigla) values('Acre', 'AC');
-insert into estado (nome, sigla) values('Alagoas', 'AL');
-insert into estado (nome, sigla) values('Amapá', 'AP');
-insert into estado (nome, sigla) values('Amazonas', 'AM');
-insert into estado (nome, sigla) values('Bahia', 'BA');
-insert into estado (nome, sigla) values('Ceará', 'CE');
-insert into estado (nome, sigla) values('Distrito Federal', 'DF');
-insert into estado (nome, sigla) values('Espírito Santo', 'ES');
-insert into estado (nome, sigla) values('Goiás', 'GO');
-insert into estado (nome, sigla) values('Maranhão', 'MA');
-insert into estado (nome, sigla) values('Mato Grosso', 'MT');
-insert into estado (nome, sigla) values('Mato Grosso do Sul', 'MS');
-insert into estado (nome, sigla) values('Minas Gerais', 'MG');
-insert into estado (nome, sigla) values('Pará', 'PA');
-insert into estado (nome, sigla) values('Paraíba', 'PB');
-insert into estado (nome, sigla) values('Paraná', 'PR');
-insert into estado (nome, sigla) values('Pernambuco', 'PE');
-insert into estado (nome, sigla) values('Piauí', 'PI');
-insert into estado (nome, sigla) values('Rio de Janeiro', 'RJ');
-insert into estado (nome, sigla) values('Rio Grande do Norte', 'RN');
-insert into estado (nome, sigla) values('Rio Grande do Sul', 'RS');
-insert into estado (nome, sigla) values('Rondônia', 'RO');
-insert into estado (nome, sigla) values('Roraima', 'RR');
-insert into estado (nome, sigla) values('Santa Catarina', 'SC');
-insert into estado (nome, sigla) values('São Paulo', 'SP');
-insert into estado (nome, sigla) values('Sergipe', 'SE');
-insert into estado (nome, sigla) values('Tocantins', 'TO');
-
-insert into municipio (nome, codigo_ibge, id_estado) values('Palmas', '1721000', 27);
-insert into municipio (nome, codigo_ibge, id_estado) values('Araguaína', '1702109', 27);
+-- Estados, municipios (lista oficial do IBGE) e faixas de CEP por UF ficam em referencia.sql,
+-- carregado antes deste arquivo. Aqui os municipios sao referenciados pelo codigo IBGE.
 
 -- =========================================================================
 -- usuarios (o login fica no Keycloak; aqui so o perfil, por isso senhaHash fica nulo).
@@ -84,8 +53,8 @@ insert into transacao (usuario_id, descricao, valor, data, tipo, escopo, categor
 insert into transacao (usuario_id, descricao, valor, data, tipo, escopo, categoria_id) values(2, 'Combustível', 200.00, '2026-09-09', 2, 2, 3);
 insert into transacao (usuario_id, descricao, valor, data, tipo, escopo, categoria_id) values(2, 'Consultoria', 1500.00, '2026-09-10', 1, 2, 4);
 
-insert into contato (usuario_id, nome, tipo, documento, email, telefone, cep, logradouro, numero, complemento, bairro, id_municipio) values(2, 'Maria Souza', 1, '52998224725', 'maria@email.com', '63999990000', '77001002', 'Praça Girassóis', 's/n', null, 'Plano Diretor Norte', 1);
-insert into contato (usuario_id, nome, tipo, documento, email, telefone, cep, logradouro, numero, complemento, bairro, id_municipio) values(2, 'Papelaria Central LTDA', 2, '11222333000181', 'contato@papelaria.com', '6332150000', '77001002', 'Praça Girassóis', '100', 'Sala 2', 'Plano Diretor Norte', 1);
+insert into contato (usuario_id, nome, tipo, documento, email, telefone, cep, logradouro, numero, complemento, bairro, id_municipio) values(2, 'Maria Souza', 1, '52998224725', 'maria@email.com', '63999990000', '77001002', 'Praça Girassóis', 's/n', null, 'Plano Diretor Norte', (select id from municipio where codigo_ibge = '1721000'));
+insert into contato (usuario_id, nome, tipo, documento, email, telefone, cep, logradouro, numero, complemento, bairro, id_municipio) values(2, 'Papelaria Central LTDA', 2, '11222333000181', 'contato@papelaria.com', '6332150000', '77001002', 'Praça Girassóis', '100', 'Sala 2', 'Plano Diretor Norte', (select id from municipio where codigo_ibge = '1721000'));
 
 -- =========================================================================
 -- assinaturas: uma por usuario (RN16); o historico do que foi cobrado fica em pagamento.
