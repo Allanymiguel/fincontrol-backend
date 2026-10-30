@@ -2,12 +2,16 @@ package br.unitins.tp2.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import br.unitins.tp2.dto.FaixaIrpfRequestDTO;
 import br.unitins.tp2.exception.ResourceNotFoundException;
 import br.unitins.tp2.exception.ValidationException;
+import br.unitins.tp2.model.AcaoAuditoria;
 import br.unitins.tp2.model.FaixaIrpf;
+import br.unitins.tp2.model.TipoAlvoAuditoria;
 import br.unitins.tp2.repository.FaixaIrpfRepository;
+import br.unitins.tp2.util.RetratoAuditoria;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -18,6 +22,9 @@ public class FaixaIrpfServiceImpl implements FaixaIrpfService {
     @Inject
     FaixaIrpfRepository faixaIrpfRepository;
 
+    @Inject
+    AuditoriaService auditoria;
+
     @Override
     @Transactional
     public FaixaIrpf create(FaixaIrpfRequestDTO faixa) {
@@ -27,6 +34,8 @@ public class FaixaIrpfServiceImpl implements FaixaIrpfService {
         aplicarDados(novaFaixa, faixa);
 
         faixaIrpfRepository.persist(novaFaixa);
+        auditoria.registrar(AcaoAuditoria.CRIACAO_FAIXA_IRPF, TipoAlvoAuditoria.FAIXA_IRPF, novaFaixa.getId(),
+                RetratoAuditoria.descricao(novaFaixa), Map.of(), RetratoAuditoria.de(novaFaixa));
 
         return novaFaixa;
     }
@@ -36,14 +45,20 @@ public class FaixaIrpfServiceImpl implements FaixaIrpfService {
     public void update(long id, FaixaIrpfRequestDTO faixa) {
         FaixaIrpf edicaoFaixa = buscarFaixaOuFalhar(id);
         validarDados(faixa, id);
+        Map<String, String> antes = RetratoAuditoria.de(edicaoFaixa);
         aplicarDados(edicaoFaixa, faixa);
+        auditoria.registrar(AcaoAuditoria.ALTERACAO_FAIXA_IRPF, TipoAlvoAuditoria.FAIXA_IRPF, id,
+                RetratoAuditoria.descricao(edicaoFaixa), antes, RetratoAuditoria.de(edicaoFaixa));
     }
 
     @Override
     @Transactional
     public void delete(long id) {
-        if (!faixaIrpfRepository.deleteById(id))
-            throw new ResourceNotFoundException("Faixa do IRPF não encontrada.");
+        FaixaIrpf excluida = buscarFaixaOuFalhar(id);
+        Map<String, String> antes = RetratoAuditoria.de(excluida);
+        faixaIrpfRepository.delete(excluida);
+        auditoria.registrar(AcaoAuditoria.EXCLUSAO_FAIXA_IRPF, TipoAlvoAuditoria.FAIXA_IRPF, id,
+                RetratoAuditoria.descricao(excluida), antes, Map.of());
     }
 
     @Override

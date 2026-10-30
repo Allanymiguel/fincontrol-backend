@@ -1,15 +1,19 @@
 package br.unitins.tp2.service;
 
 import java.util.List;
+import java.util.Map;
 
 import br.unitins.tp2.dto.CupomRequestDTO;
 import br.unitins.tp2.exception.ResourceNotFoundException;
 import br.unitins.tp2.exception.Problem;
 import br.unitins.tp2.exception.ValidationException;
+import br.unitins.tp2.model.AcaoAuditoria;
 import br.unitins.tp2.model.Cupom;
+import br.unitins.tp2.model.TipoAlvoAuditoria;
 import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.CupomRepository;
+import br.unitins.tp2.util.RetratoAuditoria;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -19,6 +23,9 @@ public class CupomServiceImpl implements CupomService {
 
     @Inject
     CupomRepository cupomRepository;
+
+    @Inject
+    AuditoriaService auditoria;
 
     @Inject
     AssinaturaRepository assinaturaRepository;
@@ -35,6 +42,8 @@ public class CupomServiceImpl implements CupomService {
         aplicarDados(novoCupom, cupom);
 
         cupomRepository.persist(novoCupom);
+        auditoria.registrar(AcaoAuditoria.CRIACAO_CUPOM, TipoAlvoAuditoria.CUPOM, novoCupom.getId(),
+                novoCupom.getCodigo(), Map.of(), RetratoAuditoria.de(novoCupom));
 
         return novoCupom;
     }
@@ -44,7 +53,10 @@ public class CupomServiceImpl implements CupomService {
     public void update(long id, CupomRequestDTO cupom) {
         Cupom edicaoCupom = buscarCupomOuFalhar(id);
         validarDados(cupom, id);
+        Map<String, String> antes = RetratoAuditoria.de(edicaoCupom);
         aplicarDados(edicaoCupom, cupom);
+        auditoria.registrar(AcaoAuditoria.ALTERACAO_CUPOM, TipoAlvoAuditoria.CUPOM, id,
+                edicaoCupom.getCodigo(), antes, RetratoAuditoria.de(edicaoCupom));
     }
 
     // cupom em uso numa assinatura ou no historico de pagamentos nao pode ser excluido: o admin o desativa
@@ -57,8 +69,11 @@ public class CupomServiceImpl implements CupomService {
             throw new ValidationException(mensagem, List.of(new Problem.FieldError("ativo", mensagem)));
         }
 
-        if (!cupomRepository.deleteById(id))
-            throw new ResourceNotFoundException("Cupom não encontrado.");
+        Cupom excluido = buscarCupomOuFalhar(id);
+        Map<String, String> antes = RetratoAuditoria.de(excluido);
+        cupomRepository.delete(excluido);
+        auditoria.registrar(AcaoAuditoria.EXCLUSAO_CUPOM, TipoAlvoAuditoria.CUPOM, id,
+                excluido.getCodigo(), antes, Map.of());
     }
 
     @Override

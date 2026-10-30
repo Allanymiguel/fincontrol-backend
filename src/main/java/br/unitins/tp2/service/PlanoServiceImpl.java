@@ -1,15 +1,19 @@
 package br.unitins.tp2.service;
 
 import java.util.List;
+import java.util.Map;
 
 import br.unitins.tp2.dto.PlanoRequestDTO;
 import br.unitins.tp2.exception.ResourceNotFoundException;
 import br.unitins.tp2.exception.Problem;
 import br.unitins.tp2.exception.ValidationException;
+import br.unitins.tp2.model.AcaoAuditoria;
 import br.unitins.tp2.model.Plano;
+import br.unitins.tp2.model.TipoAlvoAuditoria;
 import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.PlanoRepository;
+import br.unitins.tp2.util.RetratoAuditoria;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -19,6 +23,9 @@ public class PlanoServiceImpl implements PlanoService {
 
     @Inject
     PlanoRepository planoRepository;
+
+    @Inject
+    AuditoriaService auditoria;
 
     @Inject
     AssinaturaRepository assinaturaRepository;
@@ -35,6 +42,8 @@ public class PlanoServiceImpl implements PlanoService {
         aplicarDados(novoPlano, plano);
 
         planoRepository.persist(novoPlano);
+        auditoria.registrar(AcaoAuditoria.CRIACAO_PLANO, TipoAlvoAuditoria.PLANO, novoPlano.getId(),
+                novoPlano.getNome(), Map.of(), RetratoAuditoria.de(novoPlano));
 
         return novoPlano;
     }
@@ -44,7 +53,10 @@ public class PlanoServiceImpl implements PlanoService {
     public void update(long id, PlanoRequestDTO plano) {
         Plano edicaoPlano = buscarPlanoOuFalhar(id);
         validarDados(plano, id);
+        Map<String, String> antes = RetratoAuditoria.de(edicaoPlano);
         aplicarDados(edicaoPlano, plano);
+        auditoria.registrar(AcaoAuditoria.ALTERACAO_PLANO, TipoAlvoAuditoria.PLANO, id,
+                edicaoPlano.getNome(), antes, RetratoAuditoria.de(edicaoPlano));
     }
 
     // plano em uso (vigente ou agendado) ou no historico de pagamentos nao pode ser excluido: o admin o desativa
@@ -57,8 +69,11 @@ public class PlanoServiceImpl implements PlanoService {
             throw new ValidationException(mensagem, List.of(new Problem.FieldError("ativo", mensagem)));
         }
 
-        if (!planoRepository.deleteById(id))
-            throw new ResourceNotFoundException("Plano não encontrado.");
+        Plano excluido = buscarPlanoOuFalhar(id);
+        Map<String, String> antes = RetratoAuditoria.de(excluido);
+        planoRepository.delete(excluido);
+        auditoria.registrar(AcaoAuditoria.EXCLUSAO_PLANO, TipoAlvoAuditoria.PLANO, id,
+                excluido.getNome(), antes, Map.of());
     }
 
     @Override

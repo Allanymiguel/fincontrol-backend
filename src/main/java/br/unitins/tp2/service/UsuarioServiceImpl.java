@@ -1,6 +1,7 @@
 package br.unitins.tp2.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import br.unitins.tp2.dto.CadastroCompletoDTO;
@@ -14,6 +15,7 @@ import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.mapper.AssinaturaResponseMapper;
 import br.unitins.tp2.mapper.PagamentoResponseMapper;
 import br.unitins.tp2.mapper.UsuarioResponseMapper;
+import br.unitins.tp2.model.AcaoAuditoria;
 import br.unitins.tp2.model.AtividadeMei;
 import br.unitins.tp2.model.Categoria;
 import br.unitins.tp2.model.CategoriaPadrao;
@@ -21,6 +23,7 @@ import br.unitins.tp2.model.Endereco;
 import br.unitins.tp2.model.Municipio;
 import br.unitins.tp2.model.Papel;
 import br.unitins.tp2.model.PerfilFiscal;
+import br.unitins.tp2.model.TipoAlvoAuditoria;
 import br.unitins.tp2.model.Usuario;
 import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.repository.CategoriaPadraoRepository;
@@ -31,6 +34,7 @@ import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.TransacaoRepository;
 import br.unitins.tp2.repository.UsuarioRepository;
 import br.unitins.tp2.util.DocumentoUtil;
+import br.unitins.tp2.util.RetratoAuditoria;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -55,6 +59,9 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Inject
     AssinaturaService assinaturaService;
+
+    @Inject
+    AuditoriaService auditoria;
 
     @Inject
     PagamentoRepository pagamentoRepository;
@@ -120,6 +127,11 @@ public class UsuarioServiceImpl implements UsuarioService {
                     assinaturaService.criarGratuita(usuario);
                 }
 
+                // so a criacao pelo admin e auditada (o cadastro publico nao tem admin)
+                if (auditoria.isAdminLogado())
+                    auditoria.registrar(AcaoAuditoria.CRIACAO_USUARIO, TipoAlvoAuditoria.USUARIO, usuario.getId(),
+                            RetratoAuditoria.descricao(usuario), Map.of(), RetratoAuditoria.de(usuario));
+
                 return usuario;
             });
         } catch (RuntimeException e) {
@@ -171,9 +183,12 @@ public class UsuarioServiceImpl implements UsuarioService {
         try {
             return QuarkusTransaction.requiringNew().call(() -> {
                 Usuario usuario = buscarUsuarioOuFalhar(id);
+                Map<String, String> antes = RetratoAuditoria.de(usuario);
                 usuario.setNome(nome);
                 usuario.setEmail(email);
                 dados.accept(usuario);
+                auditoria.registrar(AcaoAuditoria.EDICAO_USUARIO, TipoAlvoAuditoria.USUARIO, id,
+                        RetratoAuditoria.descricao(usuario), antes, RetratoAuditoria.de(usuario));
                 return usuario;
             });
         } catch (RuntimeException e) {
@@ -216,7 +231,11 @@ public class UsuarioServiceImpl implements UsuarioService {
         try {
             return QuarkusTransaction.requiringNew().call(() -> {
                 Usuario atualizado = buscarUsuarioOuFalhar(id);
+                Map<String, String> antes = RetratoAuditoria.de(atualizado);
                 atualizado.setAtivo(novoAtivo);
+                auditoria.registrar(novoAtivo ? AcaoAuditoria.ATIVACAO_CONTA : AcaoAuditoria.DESATIVACAO_CONTA,
+                        TipoAlvoAuditoria.USUARIO, id, RetratoAuditoria.descricao(atualizado), antes,
+                        RetratoAuditoria.de(atualizado));
                 return atualizado;
             });
         } catch (RuntimeException e) {

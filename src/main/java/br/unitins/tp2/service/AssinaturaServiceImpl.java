@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.Objects;
 
 import br.unitins.tp2.dto.ObservacaoAssinaturaDTO;
@@ -13,6 +14,7 @@ import br.unitins.tp2.dto.TrocaPlanoResponseDTO;
 import br.unitins.tp2.exception.ResourceNotFoundException;
 import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.mapper.AssinaturaResponseMapper;
+import br.unitins.tp2.model.AcaoAuditoria;
 import br.unitins.tp2.model.Assinatura;
 import br.unitins.tp2.model.Cupom;
 import br.unitins.tp2.model.EfeitoTroca;
@@ -24,6 +26,7 @@ import br.unitins.tp2.model.Periodicidade;
 import br.unitins.tp2.model.Plano;
 import br.unitins.tp2.model.StatusAssinatura;
 import br.unitins.tp2.model.StatusPagamento;
+import br.unitins.tp2.model.TipoAlvoAuditoria;
 import br.unitins.tp2.model.TipoMudancaAssinatura;
 import br.unitins.tp2.model.Usuario;
 import br.unitins.tp2.repository.AssinaturaRepository;
@@ -32,6 +35,7 @@ import br.unitins.tp2.repository.MudancaAssinaturaRepository;
 import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.PlanoRepository;
 import br.unitins.tp2.repository.UsuarioRepository;
+import br.unitins.tp2.util.RetratoAuditoria;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -67,6 +71,9 @@ public class AssinaturaServiceImpl implements AssinaturaService {
 
     @Inject
     MudancaAssinaturaRepository mudancaRepository;
+
+    @Inject
+    AuditoriaService auditoria;
 
     // plano, periodicidade, cupom e forma ja validados, com o valor de cada cobranca
     private record Escolha(Plano plano, Periodicidade periodicidade, Cupom cupom, FormaPagamento forma,
@@ -131,7 +138,10 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         LocalDate hoje = LocalDate.now();
         Calculo calculo = calcular(assinatura, escolha, hoje);
 
+        Map<String, String> antes = RetratoAuditoria.de(assinatura);
         aplicar(assinatura, escolha, calculo, hoje);
+        auditar(calculo.efeito() == EfeitoTroca.DESFAZ_AGENDAMENTO ? AcaoAuditoria.DESFAZER_TROCA
+                : AcaoAuditoria.TROCA_PLANO, assinatura, antes);
 
         return toResponse(calculo, assinatura);
     }
@@ -149,7 +159,9 @@ public class AssinaturaServiceImpl implements AssinaturaService {
 
         Escolha escolha = new Escolha(gratuito, Periodicidade.MENSAL, null, FormaPagamento.NENHUMA, ZERO);
         Calculo calculo = calcular(assinatura, escolha, LocalDate.now());
+        Map<String, String> antes = RetratoAuditoria.de(assinatura);
         aplicar(assinatura, escolha, calculo, LocalDate.now());
+        auditar(AcaoAuditoria.CANCELAMENTO_PLANO, assinatura, antes);
 
         return toResponse(calculo, assinatura);
     }
@@ -161,8 +173,10 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         if (!assinatura.isTrocaAgendada())
             throw ValidationException.of("idPlano", "Não há troca de plano agendada.");
 
+        Map<String, String> antes = RetratoAuditoria.de(assinatura);
         mudancaRepository.persist(registroDoDesfazer(assinatura, LocalDate.now()));
         assinatura.limparTrocaAgendada();
+        auditar(AcaoAuditoria.DESFAZER_TROCA, assinatura, antes);
         return assinatura;
     }
 
@@ -171,7 +185,9 @@ public class AssinaturaServiceImpl implements AssinaturaService {
     public Assinatura salvarObservacao(long idUsuario, ObservacaoAssinaturaDTO dto) {
         Assinatura assinatura = buscarDoUsuario(idUsuario);
         String observacao = dto.observacao();
+        Map<String, String> antes = RetratoAuditoria.de(assinatura);
         assinatura.setObservacao(observacao == null || observacao.isBlank() ? null : observacao.trim());
+        auditar(AcaoAuditoria.OBSERVACAO_ASSINATURA, assinatura, antes);
 
         return assinatura;
     }
@@ -373,6 +389,13 @@ public class AssinaturaServiceImpl implements AssinaturaService {
                     "Plano \"" + Plano.NOME_GRATUITO + "\" não encontrado. Configure-o antes de continuar.");
 
         return gratuito;
+    }
+
+    // o alvo e a assinatura; o id do alvo e o do usuario (uma assinatura por usuario, RN16)
+    private void auditar(AcaoAuditoria acao, Assinatura assinatura, Map<String, String> antes) {
+        Usuario usuario = assinatura.getUsuario();
+        auditoria.registrar(acao, TipoAlvoAuditoria.ASSINATURA, usuario.getId(), RetratoAuditoria.descricao(usuario),
+                antes, RetratoAuditoria.de(assinatura));
     }
 
     // ===== validacoes =====

@@ -1,12 +1,16 @@
 package br.unitins.tp2.service;
 
 import java.util.List;
+import java.util.Map;
 
 import br.unitins.tp2.dto.ParametroFiscalRequestDTO;
 import br.unitins.tp2.exception.ResourceNotFoundException;
 import br.unitins.tp2.exception.ValidationException;
+import br.unitins.tp2.model.AcaoAuditoria;
 import br.unitins.tp2.model.ParametroFiscal;
+import br.unitins.tp2.model.TipoAlvoAuditoria;
 import br.unitins.tp2.repository.ParametroFiscalRepository;
+import br.unitins.tp2.util.RetratoAuditoria;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -17,6 +21,9 @@ public class ParametroFiscalServiceImpl implements ParametroFiscalService {
     @Inject
     ParametroFiscalRepository parametroFiscalRepository;
 
+    @Inject
+    AuditoriaService auditoria;
+
     @Override
     @Transactional
     public ParametroFiscal create(ParametroFiscalRequestDTO parametro) {
@@ -26,6 +33,8 @@ public class ParametroFiscalServiceImpl implements ParametroFiscalService {
         aplicarDados(novoParametro, parametro);
 
         parametroFiscalRepository.persist(novoParametro);
+        auditoria.registrar(AcaoAuditoria.CRIACAO_PARAMETRO_FISCAL, TipoAlvoAuditoria.PARAMETRO_FISCAL, novoParametro.getId(),
+                RetratoAuditoria.descricao(novoParametro), Map.of(), RetratoAuditoria.de(novoParametro));
 
         return novoParametro;
     }
@@ -35,14 +44,20 @@ public class ParametroFiscalServiceImpl implements ParametroFiscalService {
     public void update(long id, ParametroFiscalRequestDTO parametro) {
         ParametroFiscal edicaoParametro = buscarParametroOuFalhar(id);
         validarDados(parametro, id);
+        Map<String, String> antes = RetratoAuditoria.de(edicaoParametro);
         aplicarDados(edicaoParametro, parametro);
+        auditoria.registrar(AcaoAuditoria.ALTERACAO_PARAMETRO_FISCAL, TipoAlvoAuditoria.PARAMETRO_FISCAL, id,
+                RetratoAuditoria.descricao(edicaoParametro), antes, RetratoAuditoria.de(edicaoParametro));
     }
 
     @Override
     @Transactional
     public void delete(long id) {
-        if (!parametroFiscalRepository.deleteById(id))
-            throw new ResourceNotFoundException("Parâmetro fiscal não encontrado.");
+        ParametroFiscal excluido = buscarParametroOuFalhar(id);
+        Map<String, String> antes = RetratoAuditoria.de(excluido);
+        parametroFiscalRepository.delete(excluido);
+        auditoria.registrar(AcaoAuditoria.EXCLUSAO_PARAMETRO_FISCAL, TipoAlvoAuditoria.PARAMETRO_FISCAL, id,
+                RetratoAuditoria.descricao(excluido), antes, Map.of());
     }
 
     @Override
