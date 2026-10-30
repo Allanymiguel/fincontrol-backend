@@ -22,6 +22,12 @@ public class AssinaturaRepository implements PanacheRepository<Assinatura> {
         return list("usuario.id in ?1", idsUsuarios);
     }
 
+    // todas, com o que os indicadores do painel leem (usuario, plano e o que esta agendado)
+    public List<Assinatura> listParaIndicadores() {
+        return list("from Assinatura a join fetch a.usuario join fetch a.plano left join fetch a.cupom "
+                + "left join fetch a.proximoPlano left join fetch a.proximoCupom");
+    }
+
     // com cobranca vencida ate a data (inclusive): o agendador processa estas
     public List<Assinatura> findComCobrancaAte(LocalDate data) {
         return list("dataProximaCobranca <= ?1 order by dataProximaCobranca, id", data);
