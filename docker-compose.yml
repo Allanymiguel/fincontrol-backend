@@ -14,6 +14,8 @@ services:
       - "8180:8080"
     volumes:
       - ./keycloak:/opt/keycloak/data/import:ro
+      # tema de login com o visual do FinControl (start-dev nao guarda cache: editar e recarregar)
+      - ./keycloak/themes/fincontrol:/opt/keycloak/themes/fincontrol:ro
 
   # servidor de e-mail falso: recebe o "Esqueci minha senha" do Keycloak (caixa em http://localhost:8025)
   mailpit:

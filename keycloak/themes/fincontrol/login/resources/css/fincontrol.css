@@ -1,0 +1,540 @@
+/* Tema de login do FinControl. Cores, fontes e medidas copiadas do front (src/styles.css e
+   material-theme.scss) para a tela ficar igual a antiga tela de login do Angular. */
+
+:root {
+    --color-primary: #1B2A4A;
+    --color-accent: #00C896;
+    --color-accent-hover: #00B386;
+    --color-on-accent: #FFFFFF;
+    --color-bg: #F5F6FA;
+    --color-surface: #FFFFFF;
+    --color-text-primary: #1B2A4A;
+    --color-text-secondary: #6B7A99;
+    --color-text-muted: #9AA4B8;
+    --color-success: #00C896;
+    --color-success-soft: rgba(0, 200, 150, 0.1);
+    --color-warning: #F5A623;
+    --color-warning-soft: rgba(245, 166, 35, 0.1);
+    --color-danger: #E74C5E;
+    --color-danger-soft: rgba(231, 76, 94, 0.1);
+    --color-info: #4A9BF5;
+    --color-info-soft: rgba(74, 155, 245, 0.1);
+    --color-border: #E2E6EF;
+    --sidebar-bg: linear-gradient(180deg, #1B2A4A 0%, #15223D 100%);
+    --sidebar-text: rgba(255, 255, 255, 0.65);
+    --sidebar-text-active: #FFFFFF;
+    --sidebar-divider: rgba(255, 255, 255, 0.08);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --font-sans: 'Plus Jakarta Sans', sans-serif;
+    --transition: all 0.2s ease;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+}
+
+body {
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+    font-family: inherit;
+}
+
+::selection {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+}
+
+a {
+    color: var(--color-accent);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* ===== Layout: marca a esquerda, formulario a direita ===== */
+
+.auth {
+    display: grid;
+    grid-template-columns: minmax(320px, 5fr) 7fr;
+    min-height: 100vh;
+}
+
+.auth-marca {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 3rem;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text-active);
+}
+
+.auth-logo {
+    display: block;
+    width: 56px;
+    height: 56px;
+}
+
+.fatia-maior {
+    fill: var(--color-accent);
+}
+
+.fatia-media {
+    fill: currentColor;
+}
+
+.fatia-menor {
+    fill: currentColor;
+    fill-opacity: 0.55;
+}
+
+/* "Fin" em negrito, "Control" regular */
+.auth-titulo {
+    margin: 0;
+    font-size: 2.75rem;
+    font-weight: 400;
+    letter-spacing: -0.03em;
+}
+
+.auth-titulo strong {
+    font-weight: 800;
+}
+
+.auth-frase {
+    max-width: 26rem;
+    margin: 0.75rem 0 0;
+    color: var(--sidebar-text);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.auth-itens {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 1.5rem 0 0;
+    border-top: 1px solid var(--sidebar-divider);
+    list-style: none;
+    color: var(--sidebar-text);
+}
+
+.auth-itens li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.auth-itens .fc-icone {
+    color: var(--color-accent);
+}
+
+.auth-conteudo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+    overflow-y: auto;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+}
+
+.label-caps {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+}
+
+.auth-card .titulo {
+    margin: 0.25rem 0 1.5rem;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.auth-card .mensagem {
+    margin-bottom: 1rem;
+}
+
+.rodape {
+    margin: 1.5rem 0 0;
+    color: var(--color-text-secondary);
+    text-align: center;
+}
+
+.rodape p {
+    margin: 0;
+}
+
+.rodape a {
+    font-weight: 600;
+}
+
+/* texto de apoio das telas herdadas (ex.: info.ftl) */
+.instruction {
+    margin: 0 0 1rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+/* ===== Avisos (callout do app) ===== */
+
+.callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.75rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--color-info) 30%, transparent);
+    border-radius: var(--radius-md);
+    background: var(--color-info-soft);
+    color: var(--color-text-primary);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.callout .fc-icone {
+    flex-shrink: 0;
+    color: var(--color-info);
+}
+
+.callout-erro {
+    border-color: color-mix(in srgb, var(--color-danger) 30%, transparent);
+    background: var(--color-danger-soft);
+}
+
+.callout-erro .fc-icone {
+    color: var(--color-danger);
+}
+
+.callout-alerta {
+    border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);
+    background: var(--color-warning-soft);
+}
+
+.callout-alerta .fc-icone {
+    color: var(--color-warning);
+}
+
+.callout-sucesso {
+    border-color: color-mix(in srgb, var(--color-success) 35%, transparent);
+    background: var(--color-success-soft);
+}
+
+.callout-sucesso .fc-icone {
+    color: var(--color-success);
+}
+
+/* ===== Formulario (campo "outline" do Angular Material) ===== */
+
+.fc-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.fc-campo {
+    position: relative;
+    margin-bottom: 1.25rem;
+}
+
+.fc-input-grupo {
+    position: relative;
+}
+
+.fc-input {
+    display: block;
+    width: 100%;
+    height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.fc-input-grupo .fc-input {
+    padding-right: 48px;
+}
+
+.fc-input:hover {
+    border-color: var(--color-text-muted);
+}
+
+.fc-input:focus {
+    border-color: var(--color-accent);
+}
+
+.fc-input[aria-invalid="true"] {
+    border-color: var(--color-danger);
+}
+
+/* rotulo dentro do campo, que sobe para a borda ao focar ou preencher (como o mat-label) */
+.fc-label {
+    position: absolute;
+    top: 22px;
+    left: 12px;
+    padding: 0 4px;
+    transform: translateY(-50%);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    z-index: 1;
+    transition: top 0.15s ease, font-size 0.15s ease, color 0.15s ease;
+}
+
+.fc-campo:has(.fc-input:focus) .fc-label,
+.fc-campo:has(.fc-input:not(:placeholder-shown)) .fc-label {
+    top: 0;
+    font-size: 11px;
+}
+
+.fc-campo:has(.fc-input:focus) .fc-label {
+    color: var(--color-accent);
+}
+
+.fc-campo:has(.fc-input[aria-invalid="true"]) .fc-label {
+    color: var(--color-danger);
+}
+
+.fc-label .obrigatorio {
+    margin-left: 1px;
+}
+
+/* telas herdadas: o campo sem placeholder mostra o rotulo sempre na borda */
+.fc-campo:has(.fc-input:not([placeholder])) .fc-label {
+    top: 0;
+    font-size: 11px;
+}
+
+.fc-erro-campo {
+    display: block;
+    margin: 4px 16px 0;
+    color: var(--color-danger);
+    font-size: 12px;
+}
+
+.fc-botao-olho {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    transform: translateY(-50%);
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.fc-botao-olho:hover {
+    color: var(--color-text-primary);
+    background: rgba(27, 42, 74, 0.06);
+}
+
+.fc-opcoes {
+    display: flex;
+    justify-content: flex-end;
+    margin: -0.5rem 0 0.75rem;
+    font-size: 13px;
+}
+
+.fc-opcoes a {
+    font-weight: 600;
+}
+
+/* "sair das outras sessoes" (nova senha) */
+.fc-opcoes .checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-text-secondary);
+}
+
+.fc-botoes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.fc-botao {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 40px;
+    padding: 0 24px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.fc-botao-primario {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+}
+
+.fc-botao-primario:hover {
+    background: var(--color-accent-hover);
+}
+
+.fc-botao-primario:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.fc-botao-secundario {
+    border-color: var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+}
+
+.fc-botao-bloco,
+.botao-entrar {
+    width: 100%;
+}
+
+.botao-entrar {
+    margin-top: 0.5rem;
+}
+
+/* e-mail de quem esta entrando (telas depois do login) */
+.fc-usuario {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: -0.75rem 0 1.25rem;
+    color: var(--color-text-secondary);
+}
+
+.fc-usuario span {
+    color: var(--color-text-primary);
+    font-weight: 600;
+}
+
+.fc-usuario a {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ===== Icones (Material Icons, como mascara para herdar a cor do texto) ===== */
+
+.fc-icone {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    background-color: currentColor;
+    -webkit-mask: var(--icone) center / contain no-repeat;
+    mask: var(--icone) center / contain no-repeat;
+}
+
+.fc-icone-escopo {
+    --icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z'/%3E%3C/svg%3E");
+}
+
+.fc-icone-mei {
+    --icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z'/%3E%3C/svg%3E");
+}
+
+.fc-icone-recorrencia {
+    --icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z'/%3E%3C/svg%3E");
+}
+
+.fc-icone-entrar {
+    width: 18px;
+    height: 18px;
+    --icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z'/%3E%3C/svg%3E");
+}
+
+.fc-icone-olho {
+    --icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 6c3.79 0 7.17 2.13 8.82 5.5C19.17 14.87 15.79 17 12 17s-7.17-2.13-8.82-5.5C4.83 8.13 8.21 6 12 6m0-2C7 4 2.73 7.11 1 11.5 2.73 15.89 7 19 12 19s9.27-3.11 11-7.5C21.27 7.11 17 4 12 4zm0 5c1.38 0 2.5 1.12 2.5 2.5S13.38 14 12 14s-2.5-1.12-2.5-2.5S10.62 9 12 9m0-2c-2.48 0-4.5 2.02-4.5 4.5S9.52 16 12 16s4.5-2.02 4.5-4.5S14.48 7 12 7z'/%3E%3C/svg%3E");
+}
+
+.fc-icone-olho-fechado {
+    --icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 6c3.79 0 7.17 2.13 8.82 5.5-.59 1.22-1.42 2.27-2.41 3.12l1.41 1.41c1.39-1.23 2.49-2.77 3.18-4.53C21.27 7.11 17 4 12 4c-1.27 0-2.49.2-3.64.57l1.65 1.65C10.66 6.09 11.32 6 12 6zm-1.07 1.14L13 9.21c.57.25 1.03.71 1.28 1.28l2.07 2.07c.08-.34.14-.7.14-1.07C16.5 9.01 14.48 7 12 7c-.37 0-.72.05-1.07.14zM2.01 3.87l2.68 2.68C3.06 7.83 1.77 9.53 1 11.5 2.73 15.89 7 19 12 19c1.52 0 2.98-.29 4.32-.82l3.42 3.42 1.41-1.41L3.42 2.45 2.01 3.87zm7.5 7.5l2.61 2.61c-.04.01-.08.02-.12.02-1.38 0-2.5-1.12-2.5-2.5 0-.05.01-.08.01-.13zm-3.4-3.4l1.75 1.75c-.23.55-.36 1.15-.36 1.78 0 2.48 2.02 4.5 4.5 4.5.63 0 1.23-.13 1.77-.36l.98.98c-.88.24-1.8.38-2.75.38-3.79 0-7.17-2.13-8.82-5.5.7-1.43 1.72-2.61 2.93-3.53z'/%3E%3C/svg%3E");
+}
+
+.fc-icone-info {
+    --icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E");
+}
+
+.fc-icone-erro {
+    --icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z'/%3E%3C/svg%3E");
+}
+
+.fc-icone-alerta {
+    --icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z'/%3E%3C/svg%3E");
+}
+
+.fc-icone-sucesso {
+    --icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/%3E%3C/svg%3E");
+}
+
+/* ===== Celular: marca em cima, formulario embaixo ===== */
+
+@media (max-width: 900px) {
+    .auth {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto 1fr;
+    }
+
+    .auth-marca {
+        justify-content: flex-start;
+        gap: 1rem;
+        padding: 1.5rem;
+    }
+
+    .auth-conteudo {
+        align-items: flex-start;
+    }
+
+    .auth-titulo {
+        font-size: 2rem;
+    }
+
+    .auth-itens {
+        display: none;
+    }
+}
