@@ -4,9 +4,6 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import br.unitins.tp2.dto.CadastroCompletoDTO;
 import br.unitins.tp2.dto.CadastroSimplesDTO;
-import br.unitins.tp2.dto.LoginRequestDTO;
-import br.unitins.tp2.dto.RefreshTokenRequestDTO;
-import br.unitins.tp2.dto.TokenResponseDTO;
 import br.unitins.tp2.dto.UsuarioResponseDTO;
 import br.unitins.tp2.mapper.UsuarioResponseMapper;
 import br.unitins.tp2.model.Papel;
@@ -22,7 +19,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-// O back nunca gera token: so repassa o que o Keycloak emitiu
+// O login, a renovacao e o logout sao feitos direto no Keycloak (Authorization Code com PKCE, pelo
+// front). Aqui ficam so o cadastro publico e o perfil do dono do token.
 @Path("auth")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -36,13 +34,6 @@ public class AuthResource {
 
     @Inject
     JsonWebToken jwt;
-
-    @POST
-    @Path("/login")
-    @PermitAll
-    public TokenResponseDTO login(LoginRequestDTO dto) {
-        return service.login(dto);
-    }
 
     // Cadastro publico, sempre com papel USER, em duas formas: simples (nome, e-mail e senha) ou
     // completo (com dados fiscais e endereco). Depois o usuario faz login normalmente.
@@ -58,20 +49,6 @@ public class AuthResource {
     @PermitAll
     public UsuarioResponseDTO registrarCompleto(CadastroCompletoDTO dto) {
         return UsuarioResponseMapper.toResponse(usuarioService.cadastrarCompleto(dto, Papel.USER));
-    }
-
-    @POST
-    @Path("/refresh")
-    @PermitAll
-    public TokenResponseDTO renovar(RefreshTokenRequestDTO dto) {
-        return service.renovar(dto);
-    }
-
-    @POST
-    @Path("/logout")
-    @PermitAll
-    public void logout(RefreshTokenRequestDTO dto) {
-        service.logout(dto);
     }
 
     // perfil do usuario dono do token

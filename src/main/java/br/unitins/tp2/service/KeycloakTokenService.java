@@ -9,14 +9,13 @@ import org.jboss.logging.Logger;
 import br.unitins.tp2.client.KeycloakErro;
 import br.unitins.tp2.client.KeycloakTokenClient;
 import br.unitins.tp2.client.KeycloakTokenResponse;
-import br.unitins.tp2.exception.NaoAutenticadoException;
 import br.unitins.tp2.exception.ServicoExternoException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 
-// Unico ponto que fala com o endpoint de token do Keycloak: login, renovacao, logout
-// e o token da service account (usado pela Admin API). Traduz os erros do Keycloak.
+// Unico ponto que fala com o endpoint de token do Keycloak: o token da service account, usado pela
+// Admin API. O login dos usuarios nao passa pelo back (e feito direto no Keycloak, pelo front).
 @ApplicationScoped
 public class KeycloakTokenService {
 
@@ -37,37 +36,6 @@ public class KeycloakTokenService {
 
     private String tokenAdmin;
     private Instant tokenAdminExpiraEm = Instant.EPOCH;
-
-    public KeycloakTokenResponse login(String email, String senha) {
-        try {
-            return tokenClient.senha("password", clientId, clientSecret, email, senha);
-        } catch (WebApplicationException e) {
-            throw traduzirErroDeLogin(e);
-        } catch (RuntimeException e) {
-            throw indisponivel(e);
-        }
-    }
-
-    public KeycloakTokenResponse renovar(String refreshToken) {
-        try {
-            return tokenClient.renovar("refresh_token", clientId, clientSecret, refreshToken);
-        } catch (WebApplicationException e) {
-            if (isErroDoUsuario(e))
-                throw new NaoAutenticadoException("Sessão expirada. Faça login novamente.");
-            throw erroDeConfiguracao(e);
-        } catch (RuntimeException e) {
-            throw indisponivel(e);
-        }
-    }
-
-    // melhor esforco: se falhar, o token expira sozinho
-    public void logout(String refreshToken) {
-        try {
-            tokenClient.logout(clientId, clientSecret, refreshToken);
-        } catch (RuntimeException e) {
-            LOG.warnf("Falha ao encerrar a sessão no Keycloak: %s", e.getMessage());
-        }
-    }
 
     // token da service account do client, com cache ate perto de expirar
     public synchronized String tokenDeAdmin() {
@@ -97,24 +65,6 @@ public class KeycloakTokenService {
         } catch (RuntimeException ignorada) {
             return new KeycloakErro(null, null, null);
         }
-    }
-
-    private RuntimeException traduzirErroDeLogin(WebApplicationException e) {
-        if (!isErroDoUsuario(e))
-            return erroDeConfiguracao(e);
-
-        KeycloakErro erro = lerErro(e);
-        if (erro.errorDescription() != null && erro.errorDescription().toLowerCase().contains("disabled"))
-            return new NaoAutenticadoException("Conta desativada. Fale com o administrador.");
-
-        return new NaoAutenticadoException("E-mail ou senha inválidos.");
-    }
-
-    // 400/401 com "invalid_grant" = problema do usuario (senha, conta, sessao).
-    // Qualquer outro erro (ex.: 401 "invalid_client" = secret errado) e configuracao do back.
-    private boolean isErroDoUsuario(WebApplicationException e) {
-        int status = e.getResponse().getStatus();
-        return (status == 400 || status == 401) && "invalid_grant".equals(lerErro(e).error());
     }
 
     private ServicoExternoException erroDeConfiguracao(WebApplicationException e) {
