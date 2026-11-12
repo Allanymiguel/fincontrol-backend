@@ -8,16 +8,19 @@ API do FinControl (Tópicos II, UNITINS): Quarkus 3.38 com Hibernate/Panache, Po
 |---|---|
 | JDK | **25** (o `pom.xml` usa `maven.compiler.release=25`; o `JAVA_HOME` precisa apontar para ele) |
 | PostgreSQL | banco `topicos2db`, usuário `postgres` |
-| Docker Desktop | para o Keycloak 26.4 (`docker-compose.yml`) |
+| Docker Desktop | para o Keycloak 26.4 e o Mailpit (`docker-compose.yml`) |
 
 ## Como subir
 
 1. **PostgreSQL** rodando, com o banco criado (`create database topicos2db;`).
    A senha padrão está em `application.properties` (`123654`). Se a do seu PostgreSQL for outra, defina a
    variável de ambiente `QUARKUS_DATASOURCE_PASSWORD` (ela não vai para o repositório).
-2. **Keycloak:** `docker compose up -d` (console em <http://localhost:8180>). Detalhes em [KEYCLOAK.md](KEYCLOAK.md).
+2. **Keycloak e Mailpit:** `docker compose up -d`. Keycloak em <http://localhost:8180> (com o tema de login do
+   FinControl) e Mailpit em <http://localhost:8025> (caixa dos e-mails de "Esqueci minha senha").
+   Detalhes em [KEYCLOAK.md](KEYCLOAK.md). Quem já tinha o Keycloak rodando de uma versão anterior precisa
+   recriá-lo uma vez (`docker compose down` e `docker compose up -d`) para importar o realm novo.
 3. **Back:** `./mvnw quarkus:dev` (no Windows, `.\mvnw.cmd quarkus:dev`). API em <http://localhost:8080> e
-   Swagger em <http://localhost:8080/q/swagger-ui>.
+   Swagger em <http://localhost:8080/q/swagger-ui> (o **Authorize** faz o login na tela do Keycloak).
 4. **Front:** veja o README do `fincontrol-frontend`.
 
 ## Dados de demonstração
@@ -31,6 +34,8 @@ O banco usa `drop-and-create`: **a cada subida do back ele é recriado** e carre
 
 Para voltar ao estado inicial, basta reiniciar o back. Para zerar também o Keycloak (contas criadas nos testes):
 `docker compose down` e `docker compose up -d`.
+
+O login é feito na tela do Keycloak (Authorization Code com PKCE): a senha não passa pelo front nem pela API.
 
 Usuários (senha = primeiro nome em minúsculas + `12345`, ex.: `carla12345`):
 
@@ -102,5 +107,5 @@ e nunca entram na base.
 ./mvnw test
 ```
 
-55 testes unitários (JUnit 5, sem banco): códigos dos enums, indicadores do painel, auditoria, regras de CEP,
+66 testes unitários (JUnit 5, sem banco): códigos dos enums, indicadores do painel, auditoria, regras de CEP,
 cobrança, acesso (conta desativada e sessão encerrada) e exportação CSV.

@@ -1,12 +1,13 @@
 # Autenticação com Keycloak
 
 O FinControl não gera nem assina token. O **Keycloak** faz o login e emite o JWT; o back-end só valida.
+A senha é digitada **só na tela do Keycloak** (com o visual do FinControl): nem o front nem a API a recebem.
 
 | Papel do Keycloak | Onde fica no código | O que faz |
 |---|---|---|
 | **Servidor de recursos** | `quarkus-oidc` + `application.properties` | Valida o `Authorization: Bearer` e transforma `realm_access.roles` em roles do `@RolesAllowed` |
-| **Login** | `KeycloakTokenClient`, `KeycloakTokenService`, `AuthResource` | `POST /auth/login` repassa e-mail/senha ao Keycloak e devolve o token que ele emitiu |
-| **Administração** | `KeycloakAdminClient`, `KeycloakAdminService` | Cria a conta no cadastro, atribui a role, ativa/desativa usuário |
+| **Login** | front (`keycloak-js` no `AuthService`) e tema `keycloak/themes/fincontrol` | Authorization Code com PKCE: o front redireciona para a tela do Keycloak e recebe os tokens; renovação e logout também vão direto ao Keycloak |
+| **Administração** | `KeycloakAdminClient`, `KeycloakAdminService`, `KeycloakTokenService` | Cria a conta no cadastro, atribui a role, ativa/desativa usuário, encerra sessões |
 
 As chamadas de administração usam a **service account** do client `fincontrol-backend`, que só tem permissão de gerenciar usuários do realm (nenhuma senha de admin fica na configuração).
 
@@ -19,9 +20,31 @@ docker compose up -d
 ```
 
 - Console de administração: <http://localhost:8180> (usuário `admin`, senha `admin`).
-- Na primeira subida ele importa `keycloak/fincontrol-realm.json`: o realm `fincontrol`, as roles `USER` e `ADMIN`, o client `fincontrol-backend` (secret de desenvolvimento `fincontrol-dev-secret`) e os usuários de teste.
+- Na primeira subida ele importa `keycloak/fincontrol-realm.json`: o realm `fincontrol` (em pt-BR, com o tema de login `fincontrol`), as roles `USER` e `ADMIN`, os clients e os usuários de teste.
+- **Mailpit** (<http://localhost:8025>): servidor de e-mail falso que recebe o "Esqueci minha senha" do Keycloak.
+
+| Client | Tipo | Para quê |
+|---|---|---|
+| `fincontrol-frontend` | público, PKCE (S256) obrigatório | login do front (volta para `http://localhost:4200/*`) e o **Authorize** do Swagger |
+| `fincontrol-backend` | confidencial (secret de desenvolvimento `fincontrol-dev-secret`), só service account | Admin API; o login por senha (*direct access grants*) está desligado |
+
+Quem já tinha o Keycloak rodando de uma versão anterior precisa recriá-lo uma vez (veja *Voltar ao estado inicial*).
 
 Depois suba o back (`./mvnw quarkus:dev`) e o front (`ng serve`) normalmente.
+
+## Como funciona o login
+
+1. Ao abrir, o front pergunta ao Keycloak, num iframe invisível, se já existe sessão (`check-sso`). Se existir, entra sem pedir senha.
+2. Sem sessão, `/login` (ou qualquer tela protegida) redireciona para a tela de login do Keycloak, com o tema do FinControl.
+3. Depois do login, o Keycloak devolve o usuário à tela pedida com um código, que o front troca pelos tokens usando o PKCE.
+   Os tokens ficam só em memória; ao recarregar a página, o passo 1 os recupera.
+4. O token é renovado direto no Keycloak. Se a renovação falhar (sessão expirada ou encerrada pelo admin, conta desativada), o front volta para o login.
+5. **Sair** encerra a sessão no Keycloak e volta para o início do app.
+
+A tela de login tem **Esqueci minha senha** (o e-mail chega no Mailpit) e **Criar conta**, que leva para a tela de cadastro do app.
+O tema fica em `keycloak/themes/fincontrol/login` (layout em `template.ftl`, telas `login.ftl` e `login-reset-password.ftl`,
+CSS em `resources/css/fincontrol.css` e textos em `messages/messages_pt_BR.properties`). Com `start-dev` o Keycloak não guarda
+cache do tema: basta salvar e recarregar a página.
 
 ### Usuários de teste
 
@@ -62,36 +85,37 @@ Para trabalhar sem o Docker, desligue o login nos dois lados:
 - **Back:** `FINCONTROL_AUTH=false ./mvnw quarkus:dev` (no PowerShell: `$env:FINCONTROL_AUTH='false'; ./mvnw quarkus:dev`). Só vale no modo dev; fora dele a autenticação é sempre exigida.
 - **Front:** `AUTH_HABILITADA = false` em `src/app/auth/auth-config.ts`.
 
-Todas as telas ficam acessíveis sem login. Sem token, as telas operacionais usam o João como usuário simulado (`fincontrol.auth.dev-fallback-email`). O app sobe mesmo com o Keycloak fora do ar; só o login responde 503.
+Todas as telas ficam acessíveis sem login. Sem token, as telas operacionais usam o João como usuário simulado (`fincontrol.auth.dev-fallback-email`). Com o login ligado, o app também abre com o Keycloak fora do ar (sem sessão); só o login e o cadastro ficam indisponíveis.
 
 ## Endpoints de autenticação
 
 | Método e caminho | Acesso | Descrição |
 |---|---|---|
-| `POST /auth/login` | público | `{email, senha}` → `{accessToken, expiresIn, refreshToken, refreshExpiresIn}` |
-| `POST /auth/refresh` | público | `{refreshToken}` → tokens novos |
-| `POST /auth/logout` | público | `{refreshToken}` → encerra a sessão no Keycloak |
 | `POST /auth/registro/simples` | público | cria a conta (Keycloak + perfil) com role `USER`, só com nome, e-mail e senha |
 | `POST /auth/registro/completo` | público | idem, com CPF/CNPJ, perfil fiscal, telefone e endereço |
 | `GET /auth/me` | logado | perfil do dono do token |
 
-Erros seguem o mesmo formato `Problem` (RFC 7807) do resto da API: 401 para credenciais erradas, conta desativada ou sessão expirada; 403 para quem não tem a role; 503 se o Keycloak estiver fora do ar ou o client estiver mal configurado (o motivo real vai para o log).
+Login, renovação e logout não têm endpoint na API: são feitos direto no Keycloak.
+
+Erros seguem o mesmo formato `Problem` (RFC 7807) do resto da API: 401 para token ausente ou inválido, conta desativada ou sessão encerrada; 403 para quem não tem a role; 503 se o Keycloak estiver fora do ar ou o client estiver mal configurado no cadastro (o motivo real vai para o log).
 
 ## Testar pelo Swagger
 
-O Swagger (`http://localhost:8080/q/swagger-ui`) usa o esquema Bearer (`quarkus.smallrye-openapi.security-scheme=jwt`): o **Authorize** tem um campo só, para o token.
+O Swagger (`http://localhost:8080/q/swagger-ui`) usa o esquema OpenID Connect do realm e faz o login na tela do Keycloak:
 
-1. Em `POST /auth/login`, "Try it out" com `{"email": "admin@fincontrol.com", "senha": "admin12345"}`.
-2. Copie o `accessToken` da resposta.
-3. Clique em **Authorize** e cole só o token (sem "Bearer"; o Swagger põe sozinho).
+1. Clique em **Authorize**. No bloco **authorization_code with PKCE**, o `client_id` já vem preenchido (`fincontrol-frontend`) e o escopo `openid` marcado.
+2. Clique em **Authorize** desse bloco: abre uma janela com a tela de login do Keycloak. Entre com `admin@fincontrol.com` / `admin12345`.
+3. A janela fecha sozinha e as chamadas passam a levar o token.
 
-O token vale uns 30 minutos; quando a API voltar a responder 401, faça o login de novo.
+O token vale uns 30 minutos; quando a API voltar a responder 401, faça **Logout** e **Authorize** de novo.
 
 ## Produção
 
 - Passe o secret por variável de ambiente: `KEYCLOAK_CLIENT_SECRET` (e `KEYCLOAK_URL`, se o Keycloak não estiver em `localhost:8180`).
 - Gere um secret novo para o client e troque a senha do admin do Keycloak; os valores do realm de desenvolvimento são públicos.
 - Exija HTTPS no realm (`sslRequired`) e rode o Keycloak com `start` em vez de `start-dev`.
+- Cadastre os endereços de produção do front em `redirectUris`, `webOrigins` e `post.logout.redirect.uris` do client `fincontrol-frontend`, e ajuste `KEYCLOAK_CONFIG` em `src/app/auth/auth-config.ts` do front.
+- Troque o Mailpit por um servidor SMTP real (`smtpServer` do realm).
 
 ## Regras implementadas
 
