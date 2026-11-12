@@ -1,6 +1,7 @@
 # Keycloak de DESENVOLVIMENTO para o FinControl: docker compose up -d
 # Console de administracao: http://localhost:8180 (admin / admin)
-# Na primeira subida importa keycloak/fincontrol-realm.json (realm, roles, client e usuarios de teste).
+# Na primeira subida importa keycloak/fincontrol-realm.json (realm, roles, clients e usuarios de teste).
+# O Mailpit recebe os e-mails do Keycloak ("Esqueci minha senha"): http://localhost:8025
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.4
@@ -13,3 +14,10 @@ services:
       - "8180:8080"
     volumes:
       - ./keycloak:/opt/keycloak/data/import:ro
+
+  # servidor de e-mail falso: recebe o "Esqueci minha senha" do Keycloak (caixa em http://localhost:8025)
+  mailpit:
+    image: axllent/mailpit:v1.21.8
+    container_name: fincontrol-mailpit
+    ports:
+      - "8025:8025"

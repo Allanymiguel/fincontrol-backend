@@ -4,12 +4,22 @@
   "enabled": true,
   "sslRequired": "none",
   "registrationAllowed": false,
+  "resetPasswordAllowed": true,
   "loginWithEmailAllowed": true,
   "editUsernameAllowed": true,
   "duplicateEmailsAllowed": false,
   "accessTokenLifespan": 1800,
   "ssoSessionIdleTimeout": 28800,
   "ssoSessionMaxLifespan": 86400,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["pt-BR"],
+  "defaultLocale": "pt-BR",
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "nao-responda@fincontrol.local",
+    "fromDisplayName": "FinControl"
+  },
   "roles": {
     "realm": [
       { "name": "USER", "description": "Usuário do FinControl (área operacional)" },
@@ -29,6 +39,23 @@
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": true
+    },
+    {
+      "clientId": "fincontrol-frontend",
+      "name": "FinControl front-end",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:4200/*"],
+      "webOrigins": ["http://localhost:4200"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:4200/*"
+      }
     }
   ],
   "users": [
