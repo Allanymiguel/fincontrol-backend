@@ -12,9 +12,11 @@ API do FinControl (Tópicos II, UNITINS): Quarkus 3.38 com Hibernate/Panache, Po
 
 ## Como subir
 
+0. **Variáveis de ambiente:** copie o modelo para `.env` na raiz do projeto
+   (`cp .env.example .env`; no Windows, `copy .env.example .env`) e troque `DB_PASSWORD` pela senha do seu
+   PostgreSQL. O `.env` está no `.gitignore` e é lido pelo Quarkus e pelo `docker compose`; sem ele nenhum
+   dos dois sobe. Cada variável está comentada no `.env.example`.
 1. **PostgreSQL** rodando, com o banco criado (`create database topicos2db;`).
-   A senha padrão está em `application.properties` (`123654`). Se a do seu PostgreSQL for outra, defina a
-   variável de ambiente `QUARKUS_DATASOURCE_PASSWORD` (ela não vai para o repositório).
 2. **Keycloak e Mailpit:** `docker compose up -d`. Keycloak em <http://localhost:8180> (com o tema de login do
    FinControl) e Mailpit em <http://localhost:8025> (caixa dos e-mails de "Esqueci minha senha").
    Detalhes em [KEYCLOAK.md](KEYCLOAK.md). Quem já tinha o Keycloak rodando de uma versão anterior precisa

@@ -19,7 +19,7 @@ Com o Docker rodando, na pasta `fincontrol-backend`:
 docker compose up -d
 ```
 
-- Console de administração: <http://localhost:8180> (usuário `admin`, senha `admin`).
+- Console de administração: <http://localhost:8180> (usuário e senha em `KC_ADMIN_USER`/`KC_ADMIN_PASSWORD` do `.env`; no modelo, `admin`/`admin`). O `docker compose` exige o `.env` (veja o README).
 - Na primeira subida ele importa `keycloak/fincontrol-realm.json`: o realm `fincontrol` (em pt-BR, com o tema de login `fincontrol`), as roles `USER` e `ADMIN`, os clients e os usuários de teste.
 - **Mailpit** (<http://localhost:8025>): servidor de e-mail falso que recebe o "Esqueci minha senha" do Keycloak.
 
@@ -111,7 +111,7 @@ O token vale uns 30 minutos; quando a API voltar a responder 401, faça **Logout
 
 ## Produção
 
-- Passe o secret por variável de ambiente: `KEYCLOAK_CLIENT_SECRET` (e `KEYCLOAK_URL`, se o Keycloak não estiver em `localhost:8180`).
+- Passe a configuração por variáveis de ambiente (os nomes estão no `.env.example`), no mínimo `KEYCLOAK_URL`, `KEYCLOAK_CLIENT_SECRET`, `PROBLEM_BASE_URL`, `CORS_ORIGINS` e as `DB_*`; use `DB_GENERATION=validate`, `DB_LOAD_SCRIPT=no-file` e `LOG_SQL=false`.
 - Gere um secret novo para o client e troque a senha do admin do Keycloak; os valores do realm de desenvolvimento são públicos.
 - Exija HTTPS no realm (`sslRequired`) e rode o Keycloak com `start` em vez de `start-dev`.
 - Cadastre os endereços de produção do front em `redirectUris`, `webOrigins` e `post.logout.redirect.uris` do client `fincontrol-frontend`, e ajuste `KEYCLOAK_CONFIG` em `src/app/auth/auth-config.ts` do front.
