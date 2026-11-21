@@ -27,6 +27,14 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- versoes das extensoes Amazon (S3) alinhadas a esta versao da plataforma Quarkus -->
+            <dependency>
+                <groupId>${quarkus.platform.group-id}</groupId>
+                <artifactId>quarkus-amazon-services-bom</artifactId>
+                <version>${quarkus.platform.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -86,6 +94,15 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-oidc</artifactId>
+        </dependency>
+        <!-- imagens dos planos: cliente S3 (SeaweedFS no docker-compose.yml) com o cliente HTTP sincrono -->
+        <dependency>
+            <groupId>io.quarkiverse.amazonservices</groupId>
+            <artifactId>quarkus-amazon-s3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>url-connection-client</artifactId>
         </dependency>
     </dependencies>
 
