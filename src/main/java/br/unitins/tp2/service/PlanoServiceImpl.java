@@ -163,6 +163,24 @@ public class PlanoServiceImpl implements PlanoService {
         return troca.plano();
     }
 
+    // tira os metadados com lock e so depois do commit apaga o objeto (se falhar, ele so fica orfao)
+    @Override
+    public void removerImagem(long id) {
+        String chave = QuarkusTransaction.requiringNew().call(() -> {
+            Plano plano = buscarPlanoParaAlterar(id);
+            if (plano.getImagem() == null)
+                return null;
+            String chaveRemovida = plano.getImagem().getChave();
+            Map<String, String> antes = RetratoAuditoria.de(plano);
+            plano.setImagem(null);
+            auditoria.registrar(AcaoAuditoria.REMOCAO_IMAGEM_PLANO, TipoAlvoAuditoria.PLANO, id,
+                    plano.getNome(), antes, RetratoAuditoria.de(plano));
+            return chaveRemovida;
+        });
+        if (chave != null)
+            armazenamento.excluirSemFalhar(chave);
+    }
+
     private static byte[] ler(Path arquivo) {
         try {
             return Files.readAllBytes(arquivo);

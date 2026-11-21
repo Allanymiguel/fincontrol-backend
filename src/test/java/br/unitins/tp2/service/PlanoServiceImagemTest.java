@@ -160,6 +160,38 @@ class PlanoServiceImagemTest {
         verify(armazenamento, never()).enviar(anyString(), any(), anyString());
     }
 
+    // ===== remocao =====
+
+    @Test
+    void removerTiraOsMetadadosRegistraEApagaOObjetoDepois() throws IOException {
+        long id = criarPlano();
+        String chave = service.enviarImagem(id, "logo.png", PNG.length, arquivo(PNG)).getImagem().getChave();
+
+        service.removerImagem(id);
+
+        assertNull(service.findById(id).getImagem());
+        verify(auditoria).registrar(eq(AcaoAuditoria.REMOCAO_IMAGEM_PLANO), eq(TipoAlvoAuditoria.PLANO), eq(id),
+                anyString(), any(), any());
+        verify(armazenamento).excluirSemFalhar(chave);
+    }
+
+    @Test
+    void removerSemImagemNaoFazNada() {
+        long id = criarPlano();
+
+        service.removerImagem(id);
+
+        verify(auditoria, never()).registrar(eq(AcaoAuditoria.REMOCAO_IMAGEM_PLANO), any(), any(), any(), any(), any());
+        verify(armazenamento, never()).excluirSemFalhar(anyString());
+    }
+
+    @Test
+    void removerDePlanoInexistenteDa404() {
+        assertThrows(ResourceNotFoundException.class, () -> service.removerImagem(999_999));
+
+        verify(armazenamento, never()).excluirSemFalhar(anyString());
+    }
+
     private long criarPlano() {
         PlanoRequestDTO dto = new PlanoRequestDTO("Teste " + UUID.randomUUID().toString().substring(0, 8),
                 new BigDecimal("9.90"), new BigDecimal("99.00"), 100, 1, false, false, false, true);

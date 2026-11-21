@@ -20,4 +20,7 @@ public interface PlanoService {
 
     // imagem do catalogo (uma por plano, guardada no S3): envia ou troca. arquivo = upload temporario.
     Plano enviarImagem(long id, String nomeArquivo, long tamanho, Path arquivo);
+
+    // remove a imagem do plano (sem imagem, nao faz nada)
+    void removerImagem(long id);
 }
