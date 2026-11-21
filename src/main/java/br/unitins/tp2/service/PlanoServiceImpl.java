@@ -78,25 +78,31 @@ public class PlanoServiceImpl implements PlanoService {
                 edicaoPlano.getNome(), antes, RetratoAuditoria.de(edicaoPlano));
     }
 
-    // plano em uso (vigente ou agendado) ou no historico de pagamentos nao pode ser excluido: o admin o desativa
+    // plano em uso (vigente ou agendado) ou no historico de pagamentos nao pode ser excluido: o admin o desativa.
+    // A imagem sai do S3 so depois do commit; se a exclusao for barrada, nada e apagado no armazenamento.
     @Override
-    @Transactional
     public void delete(long id) {
-        // a mensagem vai no detail para aparecer no aviso do front (nao ha campo ligado a exclusao)
-        if (assinaturaRepository.countByPlano(id) > 0 || pagamentoRepository.countByPlano(id) > 0) {
-            String mensagem = "Este plano tem assinaturas e não pode ser excluído. Desative-o para não aceitar novas.";
-            throw new ValidationException(mensagem, List.of(new Problem.FieldError("ativo", mensagem)));
-        }
-        if (cupomRepository.countByPlano(id) > 0) {
-            String mensagem = "Há cupons restritos a este plano. Tire o plano desses cupons antes de excluí-lo.";
-            throw new ValidationException(mensagem, List.of(new Problem.FieldError("ativo", mensagem)));
-        }
+        String chaveImagem = QuarkusTransaction.requiringNew().call(() -> {
+            Plano excluido = buscarPlanoParaAlterar(id);
+            // a mensagem vai no detail para aparecer no aviso do front (nao ha campo ligado a exclusao)
+            if (assinaturaRepository.countByPlano(id) > 0 || pagamentoRepository.countByPlano(id) > 0) {
+                String mensagem = "Este plano tem assinaturas e não pode ser excluído. Desative-o para não aceitar novas.";
+                throw new ValidationException(mensagem, List.of(new Problem.FieldError("ativo", mensagem)));
+            }
+            if (cupomRepository.countByPlano(id) > 0) {
+                String mensagem = "Há cupons restritos a este plano. Tire o plano desses cupons antes de excluí-lo.";
+                throw new ValidationException(mensagem, List.of(new Problem.FieldError("ativo", mensagem)));
+            }
 
-        Plano excluido = buscarPlanoOuFalhar(id);
-        Map<String, String> antes = RetratoAuditoria.de(excluido);
-        planoRepository.delete(excluido);
-        auditoria.registrar(AcaoAuditoria.EXCLUSAO_PLANO, TipoAlvoAuditoria.PLANO, id,
-                excluido.getNome(), antes, Map.of());
+            String chave = excluido.getImagem() == null ? null : excluido.getImagem().getChave();
+            Map<String, String> antes = RetratoAuditoria.de(excluido);
+            planoRepository.delete(excluido);
+            auditoria.registrar(AcaoAuditoria.EXCLUSAO_PLANO, TipoAlvoAuditoria.PLANO, id,
+                    excluido.getNome(), antes, Map.of());
+            return chave;
+        });
+        if (chaveImagem != null)
+            armazenamento.excluirSemFalhar(chaveImagem);
     }
 
     @Override

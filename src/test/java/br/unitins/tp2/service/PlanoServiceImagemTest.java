@@ -33,8 +33,10 @@ import br.unitins.tp2.model.AcaoAuditoria;
 import br.unitins.tp2.model.ArquivoArmazenado;
 import br.unitins.tp2.model.Plano;
 import br.unitins.tp2.model.TipoAlvoAuditoria;
+import br.unitins.tp2.repository.PlanoRepository;
 import br.unitins.tp2.testes.Usuarios;
 import br.unitins.tp2.util.RegrasImagem;
+import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -54,6 +56,9 @@ class PlanoServiceImagemTest {
 
     @Inject
     PlanoService service;
+
+    @Inject
+    PlanoRepository planoRepository;
 
     @InjectMock
     ArmazenamentoService armazenamento;
@@ -190,6 +195,46 @@ class PlanoServiceImagemTest {
         assertThrows(ResourceNotFoundException.class, () -> service.removerImagem(999_999));
 
         verify(armazenamento, never()).excluirSemFalhar(anyString());
+    }
+
+    // ===== exclusao do plano =====
+
+    @Test
+    void excluirPlanoApagaAImagemDepoisDoCommit() throws IOException {
+        long id = criarPlano();
+        String chave = service.enviarImagem(id, "logo.png", PNG.length, arquivo(PNG)).getImagem().getChave();
+
+        service.delete(id);
+
+        assertThrows(ResourceNotFoundException.class, () -> service.findById(id));
+        verify(armazenamento).excluirSemFalhar(chave);
+    }
+
+    @Test
+    void excluirPlanoSemImagemNaoChamaOArmazenamento() {
+        long id = criarPlano();
+
+        service.delete(id);
+
+        verify(armazenamento, never()).excluirSemFalhar(anyString());
+    }
+
+    @Test
+    void exclusaoBarradaPelasRegrasMantemAImagem() {
+        // Empreendedor (seed) tem assinaturas: nao pode ser excluido
+        long empreendedor = 2;
+        ArquivoArmazenado imagem = new ArquivoArmazenado("planos/2/teste.png", "logo.png", "image/png", 10,
+                java.time.LocalDateTime.now());
+        QuarkusTransaction.requiringNew().run(() -> planoRepository.findById(empreendedor).setImagem(imagem));
+        try {
+            ValidationException erro = assertThrows(ValidationException.class, () -> service.delete(empreendedor));
+
+            assertEquals("ativo", erro.getFieldErrors().get(0).field);
+            assertEquals("planos/2/teste.png", service.findById(empreendedor).getImagem().getChave());
+            verify(armazenamento, never()).excluirSemFalhar(anyString());
+        } finally {
+            QuarkusTransaction.requiringNew().run(() -> planoRepository.findById(empreendedor).setImagem(null));
+        }
     }
 
     private long criarPlano() {
