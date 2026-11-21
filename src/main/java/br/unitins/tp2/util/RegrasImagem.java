@@ -117,6 +117,18 @@ public final class RegrasImagem {
         return resultado.toString();
     }
 
+    // URL com ?v= da versao atual nunca muda de conteudo (cada envio gera chave nova): cache de 1 ano.
+    // Sem ?v= ou com versao antiga, o navegador revalida sempre (If-None-Match -> 304).
+    public static String cacheControl(String versaoSolicitada, String versaoAtual) {
+        boolean versaoAtualPedida = versaoSolicitada != null && versaoSolicitada.equals(versaoAtual);
+        return versaoAtualPedida ? "public, max-age=31536000, immutable" : "no-cache";
+    }
+
+    // ETag forte (entre aspas, sem W/): bytes identicos para a mesma versao
+    public static String etag(String versao) {
+        return "\"" + versao + "\"";
+    }
+
     // vazio quando o conteudo nao e JPEG, PNG nem WebP (GIF, SVG, PDF, texto, arquivo curto...)
     public static Optional<TipoImagem> detectar(byte[] conteudo) {
         if (conteudo == null)

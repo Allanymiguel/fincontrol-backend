@@ -165,6 +165,23 @@ class RegrasImagemTest {
         assertEquals("2,0 MB", RegrasImagem.tamanhoLegivel(RegrasImagem.LIMITE_BYTES));
     }
 
+    @Test
+    void urlComAVersaoAtualFicaEmCachePorUmAno() {
+        assertEquals("public, max-age=31536000, immutable", RegrasImagem.cacheControl("abc", "abc"));
+    }
+
+    @Test
+    void semVersaoOuComVersaoAntigaRevalida() {
+        assertEquals("no-cache", RegrasImagem.cacheControl(null, "abc"));
+        assertEquals("no-cache", RegrasImagem.cacheControl("antiga", "abc"));
+    }
+
+    @Test
+    void etagForteEntreAspas() {
+        assertEquals("\"3f2a1c9e-8b7d-4e6f-9a01-23456789abcd\"",
+                RegrasImagem.etag("3f2a1c9e-8b7d-4e6f-9a01-23456789abcd"));
+    }
+
     private static void assertErroNoCampoArquivo(String mensagem, Runnable acao) {
         ValidationException erro = assertThrows(ValidationException.class, acao::run);
         assertEquals(1, erro.getFieldErrors().size());
