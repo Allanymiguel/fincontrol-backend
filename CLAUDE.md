@@ -16,9 +16,9 @@ Documentação para humanos (não repetir aqui, consultar quando precisar):
 
 ```bash
 cp .env.example .env               # obrigatório: sem .env o Quarkus e o docker compose não sobem
-docker compose up -d               # Keycloak :8180, Mailpit :8025 e PostgreSQL :5432
+docker compose up -d               # Keycloak :8180, Mailpit :8025, PostgreSQL :5432 e SeaweedFS (S3 :8333, arquivos :8888)
 ./mvnw quarkus:dev                 # API :8080, Swagger em /q/swagger-ui
-./mvnw test                        # testes unitários (JUnit 5, sem banco)
+./mvnw test                        # unitários + @QuarkusTest (exige o Docker: PostgreSQL do Dev Services)
 ./mvnw test -Dtest=RegrasCupomTest # uma classe de teste
 ./mvnw package                     # build completo
 FINCONTROL_AUTH=false ./mvnw quarkus:dev   # modo dev sem Keycloak (usa o João como usuário simulado)
@@ -30,6 +30,8 @@ FINCONTROL_AUTH=false ./mvnw quarkus:dev   # modo dev sem Keycloak (usa o João 
   um banco com dados que importam.
 - O Keycloak guarda as contas no container: para voltar ao realm de `keycloak/fincontrol-realm.json`,
   rode `docker compose down` e depois `docker compose up -d`.
+- O SeaweedFS guarda as imagens num volume que **não** é recriado com o banco: depois de reiniciar o back, os
+  planos voltam sem imagem e os objetos antigos ficam órfãos no bucket (esperado em dev).
 
 ## Arquitetura
 
@@ -48,6 +50,7 @@ Pacote `br.unitins.tp2`, em camadas:
 | `util` | Regras puras (`RegrasCupom`, `RegrasCobranca`, `RegrasCep`...), testáveis sem Quarkus |
 | `security` | `ContaAtivaAugmentor`: recusa token de conta desativada ou de sessão encerrada |
 | `client` | REST clients: Keycloak (token e Admin API) e ViaCEP |
+| `service/ArmazenamentoService` | Object Storage S3 (`S3Client` do `quarkus-amazon-s3`): enviar, baixar e apagar objetos. `VerificacaoBucket` cria o bucket na subida |
 
 O login acontece só no Keycloak; o back nunca emite nem assina token. `UsuarioLogadoService.atual()` resolve o
 `Usuario` local pelo claim `sub` (`keycloakId`). Criar ou editar um usuário também altera o Keycloak pela Admin API
@@ -78,8 +81,25 @@ O login acontece só no Keycloak; o back nunca emite nem assina token. `UsuarioL
   na linha do tempo.
 - **Configuração:** propriedade nova vai no `application.properties` como `${VARIAVEL:padrao}`. Segredos e URLs
   de ambiente ficam sem valor padrão. Documente a variável no `.env.example`; o `.env` não vai para o git.
-- **Testes:** JUnit 5 puro, sem `@QuarkusTest` e sem banco. Para testar uma regra de negócio, extraia a lógica
-  para uma classe `util/RegrasXxx` e teste ali.
+- **Enum novo ou constante nova** num enum com converter (ex.: `AcaoAuditoria`): inclua também no
+  `EnumIdConverterTest`, que trava os códigos; senão o teste `todasAsConstantesTemCodigoTravadoNoTeste` falha.
+- **Arquivos (S3):**
+  - Valide pelo **conteúdo** (`RegrasImagem.detectar`, magic bytes), nunca pela extensão nem pelo `Content-Type`;
+    o tipo, a extensão da chave e o `Content-Type` gravado vêm do tipo detectado.
+  - O S3 fica **fora da transação** (método do service sem `@Transactional`): envia o objeto novo, grava os
+    metadados em `QuarkusTransaction.requiringNew()` com lock (`findByIdParaAlterar`), e só depois do commit
+    apaga o antigo com `excluirSemFalhar`. Se a gravação falhar, apaga o objeto novo. Leia a chave antiga
+    **depois** do lock.
+  - A chave do bucket nunca sai da API: o DTO expõe só a `versao` (uuid da chave).
+  - S3 fora do ar vira `ServicoExternoException` (503); objeto inexistente, `ResourceNotFoundException` (404).
+- **Ids na rota:** use `{id: \\d+}` quando houver rotas literais irmãs (ex.: `planos/catalogo` e `planos/{id}`).
+- **Testes:**
+  - Regra de negócio pura: extraia para `util/RegrasXxx` e teste com JUnit 5, sem Quarkus.
+  - Integração: `@QuarkusTest` com o PostgreSQL do Dev Services (perfil `%test` do `application.properties`; o
+    seed é carregado). O usuário logado vem de `@TestSecurity` + `@OidcSecurity(claims = @Claim(key = "sub",
+    ...))` com os ids de `testes/Usuarios`. O S3 é simulado com `@InjectMock ArmazenamentoService`.
+  - O banco de teste é compartilhado entre as classes: crie os próprios planos em vez de alterar os do seed (e,
+    se alterar, restaure no `finally`).
 
 ## Dados de demonstração
 
