@@ -2,6 +2,7 @@
 # Console de administracao: http://localhost:8180 (usuario/senha em KC_ADMIN_USER/KC_ADMIN_PASSWORD no .env)
 # Na primeira subida importa keycloak/fincontrol-realm.json (realm, roles, clients e usuarios de teste).
 # O Mailpit recebe os e-mails do Keycloak ("Esqueci minha senha"): http://localhost:8025
+# O SeaweedFS guarda as imagens dos planos (API S3 em 127.0.0.1:8333, arquivos em http://127.0.0.1:8888)
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.4
@@ -36,5 +37,23 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  # Object Storage compativel com S3: imagens dos planos. "weed mini" sobe master, volume, filer e S3
+  # num processo. As credenciais e o bucket vem do .env e so valem na PRIMEIRA subida (ficam no volume).
+  # Portas so em 127.0.0.1: o filer (8888) nao tem autenticacao e mostra todos os arquivos.
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.52
+    container_name: fincontrol-seaweedfs
+    command: mini -dir=/data
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?defina S3_ACCESS_KEY no .env}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?defina S3_SECRET_KEY no .env}
+      S3_BUCKET: ${S3_BUCKET:?defina S3_BUCKET no .env}
+    ports:
+      - "127.0.0.1:8333:8333"
+      - "127.0.0.1:8888:8888"
+    volumes:
+      - seaweedfs-data:/data
+
 volumes:
   pgdata:
+  seaweedfs-data:
