@@ -33,7 +33,8 @@ import jakarta.ws.rs.core.Response;
 // Imagem do plano no catalogo (uma por plano, guardada no S3). Ler e publico: o <img> do front nao
 // leva token. Enviar, trocar e remover sao so do ADMIN.
 @RolesAllowed("ADMIN")
-@Path("planos/{id}/imagem")
+// id so com digitos: "planos/catalogo" e outras rotas literais nunca sao lidas como um id
+@Path("planos/{id: \\d+}/imagem")
 @Tag(name = "Planos")
 public class PlanoImagemResource {
 

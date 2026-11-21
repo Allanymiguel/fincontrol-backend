@@ -32,4 +32,13 @@ class PlanoResourceTest {
         given().when().get("/planos/1")
                 .then().statusCode(401);
     }
+
+    @Test
+    @TestSecurity(user = Usuarios.ADMIN, roles = "ADMIN")
+    @OidcSecurity(claims = @Claim(key = "sub", value = Usuarios.ADMIN_SUB))
+    void idQueNaoENumeroNaoCasaComARota() {
+        given().when().get("/planos/abc").then().statusCode(404);
+        given().when().get("/planos/abc/imagem").then().statusCode(404);
+        given().when().get("/planos/2").then().statusCode(200).body("nome", equalTo("Empreendedor"));
+    }
 }

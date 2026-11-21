@@ -47,7 +47,7 @@ public class PlanoResource {
     }
 
     @GET
-    @Path("/{id}")
+    @Path("/{id: \\d+}")
     public PlanoResponseDTO buscarPorId(@PathParam("id") Long id) {
         return PlanoResponseMapper.toResponse(service.findById(id));
     }
@@ -58,13 +58,13 @@ public class PlanoResource {
     }
 
     @PUT
-    @Path("/{id}")
+    @Path("/{id: \\d+}")
     public void alterar(@PathParam("id") Long id, PlanoRequestDTO plano) {
         service.update(id, plano);
     }
 
     @DELETE
-    @Path("/{id}")
+    @Path("/{id: \\d+}")
     public void apagar(@PathParam("id") Long id) {
         service.delete(id);
     }
