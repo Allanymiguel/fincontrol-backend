@@ -1,5 +1,8 @@
 package br.unitins.tp2.util;
 
+import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,6 +24,9 @@ public final class RegrasImagem {
     // WebP: "RIFF" + 4 bytes de tamanho + "WEBP"
     private static final byte[] RIFF = { 'R', 'I', 'F', 'F' };
     private static final byte[] WEBP = { 'W', 'E', 'B', 'P' };
+
+    private static final int MAX_NOME = 100;
+    private static final String NOME_PADRAO = "imagem-plano";
 
     private RegrasImagem() {
     }
@@ -57,6 +63,58 @@ public final class RegrasImagem {
         String arquivo = chave.substring(chave.lastIndexOf('/') + 1);
         int ponto = arquivo.indexOf('.');
         return ponto < 0 ? arquivo : arquivo.substring(0, ponto);
+    }
+
+    // nome do arquivo para guardar e para o download: sem caminho (C:\\fakepath\\, ../), sem caracteres de
+    // controle (CR/LF quebrariam o header), sem aspas nem barras, base com no maximo 100 caracteres e com a
+    // extensao do tipo DETECTADO (um JPEG enviado como foto.png vira foto.jpg)
+    public static String nomeParaDownload(String nomeOriginal, TipoImagem tipo) {
+        String nome = nomeOriginal == null ? "" : nomeOriginal;
+        nome = nome.substring(Math.max(nome.lastIndexOf('/'), nome.lastIndexOf('\\')) + 1);
+        nome = nome.replaceAll("[\\p{Cntrl}\"\\\\/;]", "").strip();
+        int ponto = nome.lastIndexOf('.');
+        String base = ponto >= 0 ? nome.substring(0, ponto) : nome;
+        base = base.replaceAll("^[.\\s]+|[.\\s]+$", "");
+        if (base.length() > MAX_NOME)
+            base = base.substring(0, MAX_NOME).strip();
+        if (base.isEmpty())
+            base = NOME_PADRAO;
+        return base + "." + tipo.getExtensao();
+    }
+
+    // inline (exibir) ou attachment (baixar). filename em ASCII para navegadores antigos e filename* em
+    // UTF-8 (RFC 6266/5987) para manter os acentos.
+    public static String contentDisposition(String nome, boolean download) {
+        return (download ? "attachment" : "inline")
+                + "; filename=\"" + nomeAscii(nome) + "\"; filename*=UTF-8''" + codificarRfc5987(nome);
+    }
+
+    // "850 bytes", "512 KB", "1,5 MB"
+    public static String tamanhoLegivel(long bytes) {
+        if (bytes < 1024)
+            return bytes + " bytes";
+        if (bytes < 1024 * 1024)
+            return Math.round(bytes / 1024.0) + " KB";
+        return String.format(Locale.forLanguageTag("pt-BR"), "%.1f MB", bytes / (1024.0 * 1024.0));
+    }
+
+    private static String nomeAscii(String nome) {
+        String semAcentos = Normalizer.normalize(nome, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        return semAcentos.replaceAll("[^\\x20-\\x7E]|[\"\\\\]", "_");
+    }
+
+    // attr-char da RFC 5987: letras, digitos e !#$&+-.^_`|~ passam; o resto vira %XX dos bytes UTF-8
+    private static String codificarRfc5987(String nome) {
+        StringBuilder resultado = new StringBuilder();
+        for (byte b : nome.getBytes(StandardCharsets.UTF_8)) {
+            char c = (char) (b & 0xFF);
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+                    || "!#$&+-.^_`|~".indexOf(c) >= 0)
+                resultado.append(c);
+            else
+                resultado.append('%').append(String.format("%02X", b & 0xFF));
+        }
+        return resultado.toString();
     }
 
     // vazio quando o conteudo nao e JPEG, PNG nem WebP (GIF, SVG, PDF, texto, arquivo curto...)

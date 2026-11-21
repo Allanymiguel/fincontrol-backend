@@ -116,6 +116,55 @@ class RegrasImagemTest {
         assertNull(RegrasImagem.versao(" "));
     }
 
+    @Test
+    void nomeParaDownloadTiraOCaminho() {
+        assertEquals("foto.png", RegrasImagem.nomeParaDownload("C:\\fakepath\\foto.png", TipoImagem.PNG));
+        assertEquals("passwd.png", RegrasImagem.nomeParaDownload("../../etc/passwd", TipoImagem.PNG));
+    }
+
+    @Test
+    void nomeParaDownloadTiraQuebrasDeLinhaEAspas() {
+        assertEquals("ab c.jpg", RegrasImagem.nomeParaDownload("a\r\nb \"c\".jpg", TipoImagem.JPEG));
+        assertEquals("xy.jpg", RegrasImagem.nomeParaDownload("x;y.jpg", TipoImagem.JPEG));
+    }
+
+    @Test
+    void nomeParaDownloadUsaAExtensaoDoTipoDetectado() {
+        assertEquals("foto.jpg", RegrasImagem.nomeParaDownload("foto.png", TipoImagem.JPEG));
+        assertEquals("logo.webp", RegrasImagem.nomeParaDownload("logo", TipoImagem.WEBP));
+        assertEquals("plano.anual.png", RegrasImagem.nomeParaDownload("plano.anual.gif", TipoImagem.PNG));
+    }
+
+    @Test
+    void nomeParaDownloadVazioOuSoComPontosUsaONomePadrao() {
+        assertEquals("imagem-plano.png", RegrasImagem.nomeParaDownload(null, TipoImagem.PNG));
+        assertEquals("imagem-plano.png", RegrasImagem.nomeParaDownload("   ", TipoImagem.PNG));
+        assertEquals("imagem-plano.png", RegrasImagem.nomeParaDownload(".png", TipoImagem.PNG));
+        assertEquals("imagem-plano.jpg", RegrasImagem.nomeParaDownload("C:\\pasta\\", TipoImagem.JPEG));
+    }
+
+    @Test
+    void nomeParaDownloadLimitaABaseACemCaracteres() {
+        String nome = RegrasImagem.nomeParaDownload("a".repeat(300) + ".png", TipoImagem.PNG);
+        assertEquals("a".repeat(100) + ".png", nome);
+    }
+
+    @Test
+    void contentDispositionInlineOuAttachmentComAcentosNoFilenameEstrela() {
+        assertEquals("inline; filename=\"promocao.png\"; filename*=UTF-8''promo%C3%A7%C3%A3o.png",
+                RegrasImagem.contentDisposition("promoção.png", false));
+        assertEquals("attachment; filename=\"plano essencial.jpg\"; filename*=UTF-8''plano%20essencial.jpg",
+                RegrasImagem.contentDisposition("plano essencial.jpg", true));
+    }
+
+    @Test
+    void tamanhoLegivel() {
+        assertEquals("850 bytes", RegrasImagem.tamanhoLegivel(850));
+        assertEquals("512 KB", RegrasImagem.tamanhoLegivel(512 * 1024));
+        assertEquals("1,5 MB", RegrasImagem.tamanhoLegivel(1536 * 1024));
+        assertEquals("2,0 MB", RegrasImagem.tamanhoLegivel(RegrasImagem.LIMITE_BYTES));
+    }
+
     private static void assertErroNoCampoArquivo(String mensagem, Runnable acao) {
         ValidationException erro = assertThrows(ValidationException.class, acao::run);
         assertEquals(1, erro.getFieldErrors().size());
