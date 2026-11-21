@@ -31,6 +31,8 @@ public class ServicoExternoExceptionMapper implements ExceptionMapper<ServicoExt
         p.instance = (uri != null ? uri.getRequestUri().getPath() : null);
         p.timestamp = OffsetDateTime.now();
 
-        return Response.status(p.status).type("application/problem+json").entity(p).build();
+        // erro nao vai para cache (ex.: a imagem do plano volta a existir quando o armazenamento voltar)
+        return Response.status(p.status).type("application/problem+json").header("Cache-Control", "no-store")
+                .entity(p).build();
     }
 }

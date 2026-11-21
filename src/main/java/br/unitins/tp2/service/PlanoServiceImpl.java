@@ -181,6 +181,19 @@ public class PlanoServiceImpl implements PlanoService {
             armazenamento.excluirSemFalhar(chave);
     }
 
+    @Override
+    public ArquivoArmazenado imagemDoPlano(long id) {
+        ArquivoArmazenado imagem = buscarPlanoOuFalhar(id).getImagem();
+        if (imagem == null)
+            throw new ResourceNotFoundException("Este plano não tem imagem.");
+        return imagem;
+    }
+
+    @Override
+    public byte[] conteudoDaImagem(ArquivoArmazenado imagem) {
+        return armazenamento.baixar(imagem.getChave());
+    }
+
     private static byte[] ler(Path arquivo) {
         try {
             return Files.readAllBytes(arquivo);

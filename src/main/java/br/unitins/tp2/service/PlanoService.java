@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import br.unitins.tp2.dto.PlanoRequestDTO;
+import br.unitins.tp2.model.ArquivoArmazenado;
 import br.unitins.tp2.model.Plano;
 import jakarta.validation.Valid;
 
@@ -23,4 +24,10 @@ public interface PlanoService {
 
     // remove a imagem do plano (sem imagem, nao faz nada)
     void removerImagem(long id);
+
+    // metadados da imagem (so banco: basta para responder 304); 404 se o plano nao existe ou nao tem imagem
+    ArquivoArmazenado imagemDoPlano(long id);
+
+    // bytes da imagem no S3; 404 se o objeto sumiu, 503 se o armazenamento esta fora do ar
+    byte[] conteudoDaImagem(ArquivoArmazenado imagem);
 }
