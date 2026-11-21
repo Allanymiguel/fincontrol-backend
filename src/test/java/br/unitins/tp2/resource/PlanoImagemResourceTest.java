@@ -3,6 +3,7 @@ package br.unitins.tp2.resource;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -75,8 +76,10 @@ class PlanoImagemResourceTest {
         Plano plano = planoComImagem("logo.png");
         String etag = "\"" + versao(plano) + "\"";
 
-        given().header("If-None-Match", etag).when().get("/planos/{id}/imagem", plano.getId())
-                .then().statusCode(304).header("ETag", etag).header("Cache-Control", "no-cache");
+        Response resposta = given().header("If-None-Match", etag).when().get("/planos/{id}/imagem", plano.getId());
+
+        resposta.then().statusCode(304).header("ETag", etag).header("Cache-Control", "no-cache");
+        assertEquals(1, resposta.headers().getValues("ETag").size(), "um ETag so");
 
         verify(armazenamento, never()).baixar(anyString());
     }

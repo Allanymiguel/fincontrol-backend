@@ -55,9 +55,10 @@ public class PlanoImagemResource {
         String etag = RegrasImagem.etag(versao);
         String cache = RegrasImagem.cacheControl(versaoPedida, versao);
 
+        // o 304 do evaluatePreconditions ja traz o ETag; falta so o Cache-Control
         Response.ResponseBuilder naoModificada = request.evaluatePreconditions(new EntityTag(versao));
         if (naoModificada != null)
-            return naoModificada.header(HttpHeaders.ETAG, etag).header(HttpHeaders.CACHE_CONTROL, cache).build();
+            return naoModificada.header(HttpHeaders.CACHE_CONTROL, cache).build();
 
         return Response.ok(service.conteudoDaImagem(imagem))
                 .type(imagem.getTipo())
