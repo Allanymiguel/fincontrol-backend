@@ -1,6 +1,7 @@
 package br.unitins.tp2.mapper;
 
 import br.unitins.tp2.dto.ImagemPlanoResponseDTO;
+import br.unitins.tp2.dto.PlanoCatalogoResponseDTO;
 import br.unitins.tp2.dto.PlanoResponseDTO;
 import br.unitins.tp2.model.ArquivoArmazenado;
 import br.unitins.tp2.model.Plano;
@@ -24,6 +25,10 @@ public final class PlanoResponseMapper {
                 plano.getLiberaExportacao(),
                 plano.getAtivo(),
                 imagem(plano.getImagem()));
+    }
+
+    public static PlanoCatalogoResponseDTO toCatalogo(Plano plano, Long idPlanoAtual) {
+        return new PlanoCatalogoResponseDTO(toResponse(plano), plano.getId().equals(idPlanoAtual));
     }
 
     // a chave do S3 nao sai daqui: o front recebe so a versao (o uuid da chave)
