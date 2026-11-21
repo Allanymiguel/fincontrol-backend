@@ -35,7 +35,9 @@ public enum AcaoAuditoria implements EnumComId {
     COBRANCA_MANUAL(26L, "Cobrança disparada manualmente"),
     ENCERRAMENTO_SESSOES(27L, "Sessões encerradas"),
     ESTORNO_PAGAMENTO(28L, "Estorno de pagamento"),
-    SIMULACAO_RECUSA(29L, "Simulação de recusa de pagamento");
+    SIMULACAO_RECUSA(29L, "Simulação de recusa de pagamento"),
+    ENVIO_IMAGEM_PLANO(30L, "Envio de imagem do plano"),
+    REMOCAO_IMAGEM_PLANO(31L, "Remoção de imagem do plano");
 
     private final Long ID;
     private final String NOME;

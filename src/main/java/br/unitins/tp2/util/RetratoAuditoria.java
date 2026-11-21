@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import br.unitins.tp2.model.ArquivoArmazenado;
 import br.unitins.tp2.model.Assinatura;
 import br.unitins.tp2.model.CepLocal;
 import br.unitins.tp2.model.Cupom;
@@ -25,6 +26,7 @@ import br.unitins.tp2.model.Usuario;
 public final class RetratoAuditoria {
 
     private static final DateTimeFormatter DATA_BR = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter DATA_HORA_BR = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
     private RetratoAuditoria() {
     }
@@ -40,7 +42,18 @@ public final class RetratoAuditoria {
         r.put("Módulo fiscal", simNao(plano.getLiberaFiscal()));
         r.put("Exportação", simNao(plano.getLiberaExportacao()));
         r.put("Ativo", simNao(plano.getAtivo()));
+        // nula sem imagem: na criacao do plano nao gera linha; no envio e na remocao aparece o antes e depois
+        r.put("Imagem", imagem(plano.getImagem()));
         return r;
+    }
+
+    // "logo.png (512 KB, enviada em 21/11/2026 14:03:27)". A data com segundos garante que trocar por um
+    // arquivo de mesmo nome e tamanho ainda apareca como alteracao.
+    private static String imagem(ArquivoArmazenado imagem) {
+        if (imagem == null)
+            return null;
+        String enviadaEm = imagem.getEnviadoEm() == null ? "" : ", enviada em " + DATA_HORA_BR.format(imagem.getEnviadoEm());
+        return imagem.getNome() + " (" + RegrasImagem.tamanhoLegivel(imagem.getTamanho()) + enviadaEm + ")";
     }
 
     public static Map<String, String> de(Cupom cupom) {

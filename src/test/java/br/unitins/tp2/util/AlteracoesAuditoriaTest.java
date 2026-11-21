@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import br.unitins.tp2.dto.AlteracaoAuditoriaDTO;
+import br.unitins.tp2.model.ArquivoArmazenado;
 import br.unitins.tp2.model.Cupom;
 import br.unitins.tp2.model.Plano;
 import br.unitins.tp2.model.Papel;
@@ -126,5 +128,67 @@ class AlteracoesAuditoriaTest {
         usuario.setDocumento(documento);
         usuario.setTelefone(telefone);
         return usuario;
+    }
+
+    // ===== imagem do plano =====
+
+    @Test
+    void criacaoDePlanoSemImagemNaoTemLinhaDeImagem() {
+        List<AlteracaoAuditoriaDTO> alteracoes = AlteracoesAuditoria.comparar(Map.of(), RetratoAuditoria.de(planoCom(null)));
+
+        assertTrue(alteracoes.stream().noneMatch(a -> a.campo().equals("Imagem")));
+    }
+
+    @Test
+    void envioDeImagemMostraNomeTamanhoEData() {
+        Plano antes = planoCom(null);
+        Plano depois = planoCom(arquivo("logo.png", 512 * 1024, LocalDateTime.of(2026, 11, 21, 14, 3, 27)));
+
+        List<AlteracaoAuditoriaDTO> alteracoes = AlteracoesAuditoria.comparar(RetratoAuditoria.de(antes),
+                RetratoAuditoria.de(depois));
+
+        assertEquals(1, alteracoes.size());
+        assertEquals("Imagem", alteracoes.get(0).campo());
+        assertEquals(null, alteracoes.get(0).antes());
+        assertEquals("logo.png (512 KB, enviada em 21/11/2026 14:03:27)", alteracoes.get(0).depois());
+    }
+
+    @Test
+    void trocarPorArquivoDeMesmoNomeETamanhoAindaApareceNaAuditoria() {
+        Plano antes = planoCom(arquivo("logo.png", 1000, LocalDateTime.of(2026, 11, 21, 14, 3, 27)));
+        Plano depois = planoCom(arquivo("logo.png", 1000, LocalDateTime.of(2026, 11, 21, 14, 3, 28)));
+
+        assertEquals(1, AlteracoesAuditoria.comparar(RetratoAuditoria.de(antes), RetratoAuditoria.de(depois)).size());
+    }
+
+    @Test
+    void remocaoDaImagemFicaComDepoisNulo() {
+        Plano antes = planoCom(arquivo("logo.png", 1000, LocalDateTime.of(2026, 11, 21, 14, 3, 27)));
+
+        List<AlteracaoAuditoriaDTO> alteracoes = AlteracoesAuditoria.comparar(RetratoAuditoria.de(antes),
+                RetratoAuditoria.de(planoCom(null)));
+
+        assertEquals(1, alteracoes.size());
+        assertEquals("logo.png (1000 bytes, enviada em 21/11/2026 14:03:27)", alteracoes.get(0).antes());
+        assertEquals(null, alteracoes.get(0).depois());
+    }
+
+    private static ArquivoArmazenado arquivo(String nome, long tamanho, LocalDateTime enviadoEm) {
+        return new ArquivoArmazenado("planos/1/abc.png", nome, "image/png", tamanho, enviadoEm);
+    }
+
+    private static Plano planoCom(ArquivoArmazenado imagem) {
+        Plano plano = new Plano();
+        plano.setNome("Essencial");
+        plano.setPrecoMensal(new BigDecimal("19.90"));
+        plano.setPrecoAnual(new BigDecimal("199.00"));
+        plano.setLimiteTransacoes(1000);
+        plano.setLimiteMetas(10);
+        plano.setLiberaRecorrencias(true);
+        plano.setLiberaFiscal(false);
+        plano.setLiberaExportacao(true);
+        plano.setAtivo(true);
+        plano.setImagem(imagem);
+        return plano;
     }
 }
