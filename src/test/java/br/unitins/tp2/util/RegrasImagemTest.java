@@ -1,0 +1,70 @@
+package br.unitins.tp2.util;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+
+// Regras das imagens dos planos: tipo pelo conteudo
+class RegrasImagemTest {
+
+    static final byte[] JPEG = bytes(0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F');
+    static final byte[] PNG = bytes(0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D);
+    static final byte[] WEBP = bytes('R', 'I', 'F', 'F', 0x24, 0x00, 0x00, 0x00, 'W', 'E', 'B', 'P', 'V', 'P', '8', ' ');
+
+    @Test
+    void detectaJpegPngEWebpPeloConteudo() {
+        assertEquals(Optional.of(TipoImagem.JPEG), RegrasImagem.detectar(JPEG));
+        assertEquals(Optional.of(TipoImagem.PNG), RegrasImagem.detectar(PNG));
+        assertEquals(Optional.of(TipoImagem.WEBP), RegrasImagem.detectar(WEBP));
+    }
+
+    @Test
+    void recusaGifPdfSvgERiffQueNaoEWebp() {
+        assertNaoDetecta(texto("GIF89a\u0001\u0000\u0001\u0000"));
+        assertNaoDetecta(texto("%PDF-1.7\n%"));
+        assertNaoDetecta(texto("<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>"));
+        // audio WAV tambem comeca com RIFF, mas tem WAVE no lugar de WEBP
+        assertNaoDetecta(bytes('R', 'I', 'F', 'F', 0x24, 0x00, 0x00, 0x00, 'W', 'A', 'V', 'E', 'f', 'm', 't', ' '));
+    }
+
+    @Test
+    void recusaArquivoCurtoOuVazio() {
+        assertNaoDetecta(bytes(0xFF, 0xD8));
+        assertNaoDetecta(bytes('R', 'I', 'F', 'F', 0, 0, 0, 0, 'W', 'E'));
+        assertNaoDetecta(new byte[0]);
+        assertNaoDetecta(null);
+    }
+
+    @Test
+    void textoRenomeadoParaPngNaoPassa() {
+        // o nome "foto.png" nao importa: so o conteudo decide
+        assertNaoDetecta(texto("isto e um arquivo de texto renomeado para foto.png"));
+    }
+
+    @Test
+    void contentTypeEExtensaoVemDoTipoDetectado() {
+        assertEquals("image/jpeg", TipoImagem.JPEG.getContentType());
+        assertEquals("jpg", TipoImagem.JPEG.getExtensao());
+        assertEquals("image/png", TipoImagem.PNG.getContentType());
+        assertEquals("webp", TipoImagem.WEBP.getExtensao());
+    }
+
+    private static void assertNaoDetecta(byte[] conteudo) {
+        assertTrue(RegrasImagem.detectar(conteudo).isEmpty());
+    }
+
+    static byte[] bytes(int... valores) {
+        byte[] resultado = new byte[valores.length];
+        for (int i = 0; i < valores.length; i++)
+            resultado[i] = (byte) valores[i];
+        return resultado;
+    }
+
+    static byte[] texto(String conteudo) {
+        return conteudo.getBytes(StandardCharsets.ISO_8859_1);
+    }
+}
