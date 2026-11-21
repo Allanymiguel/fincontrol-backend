@@ -12,6 +12,8 @@ public record PlanoResponseDTO(
     Boolean liberaRecorrencias,
     Boolean liberaFiscal,
     Boolean liberaExportacao,
-    Boolean ativo
+    Boolean ativo,
+    // nula quando o plano nao tem imagem
+    ImagemPlanoResponseDTO imagem
 ) {
 }

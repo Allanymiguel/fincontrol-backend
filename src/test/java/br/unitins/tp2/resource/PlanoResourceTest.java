@@ -2,6 +2,7 @@ package br.unitins.tp2.resource;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +22,9 @@ class PlanoResourceTest {
     void adminBuscaPlanoDoSeed() {
         given().when().get("/planos/1")
                 .then().statusCode(200)
-                .body("nome", equalTo("Essencial"));
+                .body("nome", equalTo("Essencial"))
+                // o seed nao traz imagens: os planos comecam sem
+                .body("imagem", nullValue());
     }
 
     @Test

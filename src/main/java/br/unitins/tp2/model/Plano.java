@@ -3,7 +3,10 @@ package br.unitins.tp2.model;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 
 // Plano de assinatura do proprio FinControl: preco e os limites/modulos que libera ao usuario (RN14)
@@ -41,6 +44,17 @@ public class Plano extends DefaultEntity {
 
     @Column(nullable = false)
     private Boolean ativo;
+
+    // imagem do catalogo (uma por plano), guardada no S3; nula quando o plano nao tem imagem
+    @Embedded
+    @AttributeOverrides({
+        @AttributeOverride(name = "chave", column = @Column(name = "imagemChave", length = 200)),
+        @AttributeOverride(name = "nome", column = @Column(name = "imagemNome", length = 120)),
+        @AttributeOverride(name = "tipo", column = @Column(name = "imagemTipo", length = 30)),
+        @AttributeOverride(name = "tamanho", column = @Column(name = "imagemTamanho")),
+        @AttributeOverride(name = "enviadoEm", column = @Column(name = "imagemEnviadaEm"))
+    })
+    private ArquivoArmazenado imagem;
 
     public String getNome() {
         return nome;
@@ -112,6 +126,14 @@ public class Plano extends DefaultEntity {
 
     public void setAtivo(Boolean ativo) {
         this.ativo = ativo;
+    }
+
+    public ArquivoArmazenado getImagem() {
+        return imagem;
+    }
+
+    public void setImagem(ArquivoArmazenado imagem) {
+        this.imagem = imagem;
     }
 
     // preco de uma cobranca na periodicidade, menos o percentual do cupom; arredondado em centavos
