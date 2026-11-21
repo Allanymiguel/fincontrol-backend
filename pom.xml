@@ -85,6 +85,18 @@
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- @InjectMock nos testes com @QuarkusTest (ex.: ArmazenamentoService sem o S3 de verdade) -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit-mockito</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- @TestSecurity + @OidcSecurity: usuario logado com claims (sub) sem o Keycloak -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-test-security-oidc</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- cobranca diaria das assinaturas -->
         <dependency>
             <groupId>io.quarkus</groupId>
