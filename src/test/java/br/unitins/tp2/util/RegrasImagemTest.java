@@ -1,12 +1,18 @@
 package br.unitins.tp2.util;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+
+import br.unitins.tp2.exception.Problem;
+import br.unitins.tp2.exception.ValidationException;
 
 // Regras das imagens dos planos: tipo pelo conteudo
 class RegrasImagemTest {
@@ -51,6 +57,52 @@ class RegrasImagemTest {
         assertEquals("jpg", TipoImagem.JPEG.getExtensao());
         assertEquals("image/png", TipoImagem.PNG.getContentType());
         assertEquals("webp", TipoImagem.WEBP.getExtensao());
+    }
+
+    @Test
+    void limiteEDoisMiB() {
+        assertEquals(2_097_152L, RegrasImagem.LIMITE_BYTES);
+    }
+
+    @Test
+    void arquivoVazioERecusado() {
+        assertErroNoCampoArquivo("O arquivo está vazio.", () -> RegrasImagem.validarTamanho(0));
+        assertErroNoCampoArquivo("O arquivo está vazio.", () -> RegrasImagem.validar(new byte[0]));
+    }
+
+    @Test
+    void exatamenteDoisMiBPassaEUmByteAMaisNao() {
+        assertDoesNotThrow(() -> RegrasImagem.validarTamanho(RegrasImagem.LIMITE_BYTES));
+        assertErroNoCampoArquivo("A imagem pode ter no máximo 2 MB.",
+                () -> RegrasImagem.validarTamanho(RegrasImagem.LIMITE_BYTES + 1));
+    }
+
+    @Test
+    void validarConfereOTamanhoDoConteudo() {
+        assertEquals(TipoImagem.PNG, RegrasImagem.validar(comTamanho(PNG, (int) RegrasImagem.LIMITE_BYTES)));
+        assertErroNoCampoArquivo("A imagem pode ter no máximo 2 MB.",
+                () -> RegrasImagem.validar(comTamanho(PNG, (int) RegrasImagem.LIMITE_BYTES + 1)));
+    }
+
+    @Test
+    void validarDevolveOTipoDetectadoOuRecusaOConteudo() {
+        assertEquals(TipoImagem.JPEG, RegrasImagem.validar(JPEG));
+        assertEquals(TipoImagem.WEBP, RegrasImagem.validar(WEBP));
+        assertErroNoCampoArquivo("Envie uma imagem JPEG, PNG ou WebP.",
+                () -> RegrasImagem.validar(texto("GIF89a\u0001\u0000\u0001\u0000")));
+    }
+
+    private static void assertErroNoCampoArquivo(String mensagem, Runnable acao) {
+        ValidationException erro = assertThrows(ValidationException.class, acao::run);
+        assertEquals(1, erro.getFieldErrors().size());
+        Problem.FieldError campo = erro.getFieldErrors().get(0);
+        assertEquals("arquivo", campo.field);
+        assertEquals(mensagem, campo.message);
+    }
+
+    // conteudo com a assinatura do tipo e completado com zeros ate o tamanho pedido
+    private static byte[] comTamanho(byte[] assinatura, int tamanho) {
+        return Arrays.copyOf(assinatura, tamanho);
     }
 
     private static void assertNaoDetecta(byte[] conteudo) {
