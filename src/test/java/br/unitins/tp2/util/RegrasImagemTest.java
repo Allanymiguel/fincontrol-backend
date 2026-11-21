@@ -2,12 +2,15 @@ package br.unitins.tp2.util;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
@@ -90,6 +93,27 @@ class RegrasImagemTest {
         assertEquals(TipoImagem.WEBP, RegrasImagem.validar(WEBP));
         assertErroNoCampoArquivo("Envie uma imagem JPEG, PNG ou WebP.",
                 () -> RegrasImagem.validar(texto("GIF89a\u0001\u0000\u0001\u0000")));
+    }
+
+    @Test
+    void chaveTemOPlanoOUuidEAExtensaoDoTipoDetectado() {
+        UUID uuid = UUID.fromString("3f2a1c9e-8b7d-4e6f-9a01-23456789abcd");
+        assertEquals("planos/7/3f2a1c9e-8b7d-4e6f-9a01-23456789abcd.jpg", RegrasImagem.chave(7, TipoImagem.JPEG, uuid));
+        assertEquals("planos/7/3f2a1c9e-8b7d-4e6f-9a01-23456789abcd.webp", RegrasImagem.chave(7, TipoImagem.WEBP, uuid));
+    }
+
+    @Test
+    void cadaEnvioGeraUmaChaveNova() {
+        assertNotEquals(RegrasImagem.chave(1, TipoImagem.PNG), RegrasImagem.chave(1, TipoImagem.PNG));
+        assertTrue(RegrasImagem.chave(1, TipoImagem.PNG).matches("planos/1/[0-9a-f-]{36}\\.png"));
+    }
+
+    @Test
+    void versaoEOUuidDaChave() {
+        UUID uuid = UUID.randomUUID();
+        assertEquals(uuid.toString(), RegrasImagem.versao(RegrasImagem.chave(3, TipoImagem.PNG, uuid)));
+        assertNull(RegrasImagem.versao(null));
+        assertNull(RegrasImagem.versao(" "));
     }
 
     private static void assertErroNoCampoArquivo(String mensagem, Runnable acao) {

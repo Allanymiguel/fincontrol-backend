@@ -1,6 +1,7 @@
 package br.unitins.tp2.util;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import br.unitins.tp2.exception.ValidationException;
 
@@ -37,6 +38,25 @@ public final class RegrasImagem {
         validarTamanho(conteudo == null ? 0 : conteudo.length);
         return detectar(conteudo)
                 .orElseThrow(() -> ValidationException.of(CAMPO, "Envie uma imagem JPEG, PNG ou WebP."));
+    }
+
+    // chave do objeto no bucket: planos/{id}/{uuid}.{ext}. Cada envio gera uma chave nova, entao trocar
+    // a imagem nunca sobrescreve o objeto que um navegador ainda tem em cache.
+    public static String chave(long idPlano, TipoImagem tipo) {
+        return chave(idPlano, tipo, UUID.randomUUID());
+    }
+
+    static String chave(long idPlano, TipoImagem tipo, UUID uuid) {
+        return "planos/" + idPlano + "/" + uuid + "." + tipo.getExtensao();
+    }
+
+    // versao da imagem = o uuid da chave. Vai no ETag e no ?v= da URL; a chave em si nunca sai da API.
+    public static String versao(String chave) {
+        if (chave == null || chave.isBlank())
+            return null;
+        String arquivo = chave.substring(chave.lastIndexOf('/') + 1);
+        int ponto = arquivo.indexOf('.');
+        return ponto < 0 ? arquivo : arquivo.substring(0, ponto);
     }
 
     // vazio quando o conteudo nao e JPEG, PNG nem WebP (GIF, SVG, PDF, texto, arquivo curto...)
