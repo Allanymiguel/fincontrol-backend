@@ -1,5 +1,9 @@
 package br.unitins.tp2.service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -8,13 +12,17 @@ import br.unitins.tp2.exception.ResourceNotFoundException;
 import br.unitins.tp2.exception.Problem;
 import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.model.AcaoAuditoria;
+import br.unitins.tp2.model.ArquivoArmazenado;
 import br.unitins.tp2.model.Plano;
 import br.unitins.tp2.model.TipoAlvoAuditoria;
 import br.unitins.tp2.repository.AssinaturaRepository;
 import br.unitins.tp2.repository.CupomRepository;
 import br.unitins.tp2.repository.PagamentoRepository;
 import br.unitins.tp2.repository.PlanoRepository;
+import br.unitins.tp2.util.RegrasImagem;
 import br.unitins.tp2.util.RetratoAuditoria;
+import br.unitins.tp2.util.TipoImagem;
+import io.quarkus.narayana.jta.QuarkusTransaction;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -36,6 +44,13 @@ public class PlanoServiceImpl implements PlanoService {
 
     @Inject
     CupomRepository cupomRepository;
+
+    @Inject
+    ArmazenamentoService armazenamento;
+
+    // resultado da transacao do envio: o plano gravado e a chave que ele tinha antes (para apagar depois)
+    private record ImagemTrocada(Plano plano, String chaveAntiga) {
+    }
 
     @Override
     @Transactional
@@ -107,6 +122,60 @@ public class PlanoServiceImpl implements PlanoService {
     @Override
     public long count(String nome) {
         return planoRepository.findByNome(nome).count();
+    }
+
+    // S3 fora da transacao (nenhuma conexao do banco fica presa esperando o armazenamento):
+    // valida -> confere o plano -> envia o objeto novo -> grava os metadados (com lock) -> apaga o antigo.
+    // Se a gravacao falhar, apaga o objeto novo; se apagar o antigo falhar, ele so fica orfao no bucket.
+    @Override
+    public Plano enviarImagem(long id, String nomeArquivo, long tamanho, Path arquivo) {
+        RegrasImagem.validarTamanho(tamanho);
+        byte[] conteudo = ler(arquivo);
+        TipoImagem tipo = RegrasImagem.validar(conteudo);
+
+        boolean existe = QuarkusTransaction.requiringNew().call(() -> planoRepository.findById(id) != null);
+        if (!existe)
+            throw new ResourceNotFoundException("Plano não encontrado.");
+
+        String chaveNova = RegrasImagem.chave(id, tipo);
+        armazenamento.enviar(chaveNova, conteudo, tipo.getContentType());
+
+        ImagemTrocada troca;
+        try {
+            troca = QuarkusTransaction.requiringNew().call(() -> {
+                Plano plano = buscarPlanoParaAlterar(id);
+                // lida depois do lock: e a chave que ESTE envio substitui
+                String chaveAntiga = plano.getImagem() == null ? null : plano.getImagem().getChave();
+                Map<String, String> antes = RetratoAuditoria.de(plano);
+                plano.setImagem(new ArquivoArmazenado(chaveNova, RegrasImagem.nomeParaDownload(nomeArquivo, tipo),
+                        tipo.getContentType(), conteudo.length, LocalDateTime.now()));
+                auditoria.registrar(AcaoAuditoria.ENVIO_IMAGEM_PLANO, TipoAlvoAuditoria.PLANO, id,
+                        plano.getNome(), antes, RetratoAuditoria.de(plano));
+                return new ImagemTrocada(plano, chaveAntiga);
+            });
+        } catch (RuntimeException e) {
+            armazenamento.excluirSemFalhar(chaveNova);
+            throw e;
+        }
+
+        if (troca.chaveAntiga() != null)
+            armazenamento.excluirSemFalhar(troca.chaveAntiga());
+        return troca.plano();
+    }
+
+    private static byte[] ler(Path arquivo) {
+        try {
+            return Files.readAllBytes(arquivo);
+        } catch (IOException | RuntimeException e) {
+            throw ValidationException.of(RegrasImagem.CAMPO, "Não foi possível ler o arquivo.");
+        }
+    }
+
+    private Plano buscarPlanoParaAlterar(long id) {
+        Plano plano = planoRepository.findByIdParaAlterar(id);
+        if (plano == null)
+            throw new ResourceNotFoundException("Plano não encontrado.");
+        return plano;
     }
 
     // Regras que a Bean Validation (anotacoes do DTO) nao consegue checar sozinha

@@ -4,6 +4,7 @@ import br.unitins.tp2.model.Plano;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.LockModeType;
 
 @ApplicationScoped
 public class PlanoRepository implements PanacheRepository<Plano> {
@@ -22,6 +23,12 @@ public class PlanoRepository implements PanacheRepository<Plano> {
         if (id == null)
             return find("lower(nome) = lower(?1)", nome).firstResult();
         return find("lower(nome) = lower(?1) and id <> ?2", nome, id).firstResult();
+    }
+
+    // trava a linha do plano ate o fim da transacao: dois envios de imagem ao mesmo tempo nao leem a
+    // mesma chave antiga (cada um apaga so o objeto que ele mesmo substituiu)
+    public Plano findByIdParaAlterar(long id) {
+        return findById(id, LockModeType.PESSIMISTIC_WRITE);
     }
 
     @Override
