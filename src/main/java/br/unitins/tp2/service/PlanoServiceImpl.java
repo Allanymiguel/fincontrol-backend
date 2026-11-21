@@ -13,6 +13,7 @@ import br.unitins.tp2.exception.Problem;
 import br.unitins.tp2.exception.ValidationException;
 import br.unitins.tp2.model.AcaoAuditoria;
 import br.unitins.tp2.model.ArquivoArmazenado;
+import br.unitins.tp2.model.Assinatura;
 import br.unitins.tp2.model.Plano;
 import br.unitins.tp2.model.TipoAlvoAuditoria;
 import br.unitins.tp2.repository.AssinaturaRepository;
@@ -23,6 +24,7 @@ import br.unitins.tp2.util.RegrasImagem;
 import br.unitins.tp2.util.RetratoAuditoria;
 import br.unitins.tp2.util.TipoImagem;
 import io.quarkus.narayana.jta.QuarkusTransaction;
+import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -47,6 +49,12 @@ public class PlanoServiceImpl implements PlanoService {
 
     @Inject
     ArmazenamentoService armazenamento;
+
+    @Inject
+    UsuarioLogadoService usuarioLogado;
+
+    @Inject
+    SecurityIdentity identity;
 
     // resultado da transacao do envio: o plano gravado e a chave que ele tinha antes (para apagar depois)
     private record ImagemTrocada(Plano plano, String chaveAntiga) {
@@ -198,6 +206,22 @@ public class PlanoServiceImpl implements PlanoService {
     @Override
     public byte[] conteudoDaImagem(ArquivoArmazenado imagem) {
         return armazenamento.baixar(imagem.getChave());
+    }
+
+    @Override
+    public Catalogo catalogo(int page, int pageSize) {
+        Long idPlanoAtual = idPlanoDoUsuarioLogado();
+        List<Plano> planos = planoRepository.findCatalogo(idPlanoAtual).page(page, pageSize).list();
+        long total = planoRepository.findCatalogo(idPlanoAtual).count();
+        return new Catalogo(planos, total, idPlanoAtual);
+    }
+
+    // so o usuario comum tem assinatura (RN16). Anonimo = modo dev sem login: usa o usuario simulado.
+    private Long idPlanoDoUsuarioLogado() {
+        if (!identity.hasRole("USER") && !identity.isAnonymous())
+            return null;
+        Assinatura assinatura = assinaturaRepository.findByUsuario(usuarioLogado.idAtual());
+        return assinatura == null ? null : assinatura.getPlano().getId();
     }
 
     private static byte[] ler(Path arquivo) {

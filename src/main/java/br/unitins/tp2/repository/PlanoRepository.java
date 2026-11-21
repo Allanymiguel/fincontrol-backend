@@ -31,6 +31,13 @@ public class PlanoRepository implements PanacheRepository<Plano> {
         return findById(id, LockModeType.PESSIMISTIC_WRITE);
     }
 
+    // catalogo: os planos ativos e, mesmo inativo, o plano atual do usuario (ele continua vendo o que assina)
+    public PanacheQuery<Plano> findCatalogo(Long idPlanoAtual) {
+        if (idPlanoAtual == null)
+            return find("ativo = true order by precoMensal, nome");
+        return find("(ativo = true or id = ?1) order by precoMensal, nome", idPlanoAtual);
+    }
+
     @Override
     public PanacheQuery<Plano> findAll() {
         return find("order by precoMensal, nome");

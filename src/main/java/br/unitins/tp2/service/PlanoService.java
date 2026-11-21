@@ -10,6 +10,10 @@ import jakarta.validation.Valid;
 
 public interface PlanoService {
 
+    // pagina do catalogo; idPlanoAtual = plano da assinatura do usuario logado (null para o admin)
+    record Catalogo(List<Plano> planos, long total, Long idPlanoAtual) {
+    }
+
     Plano create(@Valid PlanoRequestDTO plano);
     void update(long id, @Valid PlanoRequestDTO plano);
     void delete(long id);
@@ -30,4 +34,6 @@ public interface PlanoService {
 
     // bytes da imagem no S3; 404 se o objeto sumiu, 503 se o armazenamento esta fora do ar
     byte[] conteudoDaImagem(ArquivoArmazenado imagem);
+
+    Catalogo catalogo(int page, int pageSize);
 }
