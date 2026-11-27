@@ -16,6 +16,26 @@ import jakarta.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 public interface KeycloakTokenClient {
 
+    // login com e-mail e senha (password grant); scope openid = fluxo OpenID Connect
+    @POST
+    @Path("/token")
+    KeycloakTokenResponse senha(
+            @FormParam("grant_type") String grantType,
+            @FormParam("client_id") String clientId,
+            @FormParam("client_secret") String clientSecret,
+            @FormParam("username") String username,
+            @FormParam("password") String password,
+            @FormParam("scope") String scope);
+
+    // troca o refresh token por um novo access token
+    @POST
+    @Path("/token")
+    KeycloakTokenResponse renovar(
+            @FormParam("grant_type") String grantType,
+            @FormParam("client_id") String clientId,
+            @FormParam("client_secret") String clientSecret,
+            @FormParam("refresh_token") String refreshToken);
+
     // token do proprio client (service account), usado nas chamadas da Admin API
     @POST
     @Path("/token")
@@ -23,4 +43,12 @@ public interface KeycloakTokenClient {
             @FormParam("grant_type") String grantType,
             @FormParam("client_id") String clientId,
             @FormParam("client_secret") String clientSecret);
+
+    // encerra a sessao do usuario no Keycloak (invalida o refresh token)
+    @POST
+    @Path("/logout")
+    void logout(
+            @FormParam("client_id") String clientId,
+            @FormParam("client_secret") String clientSecret,
+            @FormParam("refresh_token") String refreshToken);
 }
