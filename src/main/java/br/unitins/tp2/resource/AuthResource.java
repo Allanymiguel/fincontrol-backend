@@ -5,6 +5,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import br.unitins.tp2.client.KeycloakTokenResponse;
 import br.unitins.tp2.dto.CadastroCompletoDTO;
 import br.unitins.tp2.dto.CadastroSimplesDTO;
+import br.unitins.tp2.dto.EsqueciSenhaDTO;
 import br.unitins.tp2.dto.LoginRequestDTO;
 import br.unitins.tp2.dto.TokenResponseDTO;
 import br.unitins.tp2.dto.UsuarioResponseDTO;
@@ -87,6 +88,14 @@ public class AuthResource {
         exigirChamadaDoApp(cabecalhoDoApp);
         service.logout(refreshToken);
         return Response.noContent().cookie(cookie.apagar()).build();
+    }
+
+    // o Keycloak envia o e-mail com o link; a resposta e a mesma exista a conta ou nao
+    @POST
+    @Path("/esqueci-senha")
+    @PermitAll
+    public void esqueciSenha(EsqueciSenhaDTO dto) {
+        service.esqueciSenha(dto);
     }
 
     // Protecao contra CSRF nas chamadas que agem so com o cookie: um formulario de outro site nao

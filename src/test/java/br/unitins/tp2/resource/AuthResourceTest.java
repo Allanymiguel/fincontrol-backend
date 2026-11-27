@@ -21,6 +21,7 @@ import br.unitins.tp2.client.KeycloakTokenResponse;
 import br.unitins.tp2.exception.NaoAutenticadoException;
 import br.unitins.tp2.exception.ServicoExternoException;
 import br.unitins.tp2.security.VerificacaoAcesso;
+import br.unitins.tp2.service.KeycloakAdminService;
 import br.unitins.tp2.service.KeycloakTokenService;
 import br.unitins.tp2.testes.Tokens;
 import br.unitins.tp2.testes.Usuarios;
@@ -42,6 +43,9 @@ class AuthResourceTest {
 
     @InjectMock
     KeycloakTokenService keycloak;
+
+    @InjectMock
+    KeycloakAdminService keycloakAdmin;
 
     @Inject
     VerificacaoAcesso verificacao;
@@ -181,6 +185,22 @@ class AuthResourceTest {
                 .header("Set-Cookie", containsString("Max-Age=0"));
 
         assertNull(verificacao.motivoParaRecusar(Usuarios.JOAO_SUB, "sessao-forjada"));
+    }
+
+    @Test
+    void esqueciSenhaRespondeSemConteudo() {
+        given().contentType(ContentType.JSON).body(Map.of("email", "Joao@Email.com"))
+                .when().post("/auth/esqueci-senha").then().statusCode(204);
+
+        verify(keycloakAdmin).enviarRedefinicaoDeSenha("joao@email.com");
+    }
+
+    @Test
+    void esqueciSenhaComEmailInvalidoRecebe400() {
+        given().contentType(ContentType.JSON).body(Map.of("email", "sem-arroba"))
+                .when().post("/auth/esqueci-senha").then().statusCode(400);
+
+        verifyNoInteractions(keycloakAdmin);
     }
 
     @Test

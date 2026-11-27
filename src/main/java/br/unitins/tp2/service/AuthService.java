@@ -1,6 +1,7 @@
 package br.unitins.tp2.service;
 
 import br.unitins.tp2.client.KeycloakTokenResponse;
+import br.unitins.tp2.dto.EsqueciSenhaDTO;
 import br.unitins.tp2.dto.LoginRequestDTO;
 import br.unitins.tp2.model.Usuario;
 import jakarta.validation.Valid;
@@ -14,6 +15,8 @@ public interface AuthService {
     KeycloakTokenResponse renovar(String refreshToken);
 
     void logout(String refreshToken);
+
+    void esqueciSenha(@NotNull(message = "Informe o e-mail.") @Valid EsqueciSenhaDTO dto);
 
     Usuario usuarioLogado(String keycloakId);
 }

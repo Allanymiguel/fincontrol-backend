@@ -3,6 +3,7 @@ package br.unitins.tp2.service;
 import java.util.List;
 import java.util.function.Function;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 
@@ -26,12 +27,21 @@ public class KeycloakAdminService {
 
     private static final Logger LOG = Logger.getLogger(KeycloakAdminService.class);
 
+    private static final int VALIDADE_DO_LINK_EM_SEGUNDOS = 30 * 60;
+
     @Inject
     @RestClient
     KeycloakAdminClient adminClient;
 
     @Inject
     KeycloakTokenService keycloakTokenService;
+
+    @ConfigProperty(name = "fincontrol.keycloak.client-id")
+    String clientId;
+
+    // para onde o link do e-mail volta depois que a senha e trocada
+    @ConfigProperty(name = "fincontrol.frontend.url")
+    String urlDoFront;
 
     // cria o usuario ja com a senha definitiva e devolve o id dele no Keycloak
     public String criarUsuario(String email, String nome, String senha) {
@@ -89,6 +99,25 @@ public class KeycloakAdminService {
             adminClient.encerrarSessoes(token, keycloakId);
             return sessoes;
         });
+    }
+
+    // "Esqueci minha senha". Conta inexistente ou desativada nao recebe nada e nao gera erro, e a
+    // falha no envio so vai para o log: a resposta nao pode revelar quais e-mails tem conta
+    public void enviarRedefinicaoDeSenha(String email) {
+        executar(token -> adminClient.buscarPorEmail(token, email, true)).stream()
+                .filter(usuario -> Boolean.TRUE.equals(usuario.enabled()))
+                .findFirst()
+                .ifPresent(usuario -> {
+                    try {
+                        executar(token -> {
+                            adminClient.enviarEmailDeAcoes(token, usuario.id(), clientId, urlDoFront + "/login",
+                                    VALIDADE_DO_LINK_EM_SEGUNDOS, List.of("UPDATE_PASSWORD"));
+                            return null;
+                        });
+                    } catch (ServicoExternoException | ResourceNotFoundException e) {
+                        LOG.errorf(e, "Não foi possível enviar o e-mail de nova senha do usuário %s.", usuario.id());
+                    }
+                });
     }
 
     // melhor esforco: usado para desfazer um cadastro que falhou no meio

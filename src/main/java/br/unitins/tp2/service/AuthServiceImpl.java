@@ -3,6 +3,7 @@ package br.unitins.tp2.service;
 import java.util.List;
 
 import br.unitins.tp2.client.KeycloakTokenResponse;
+import br.unitins.tp2.dto.EsqueciSenhaDTO;
 import br.unitins.tp2.dto.LoginRequestDTO;
 import br.unitins.tp2.exception.NaoAutenticadoException;
 import br.unitins.tp2.exception.ResourceNotFoundException;
@@ -21,6 +22,9 @@ public class AuthServiceImpl implements AuthService {
     KeycloakTokenService keycloakTokenService;
 
     @Inject
+    KeycloakAdminService keycloakAdminService;
+
+    @Inject
     UsuarioRepository usuarioRepository;
 
     @Override
@@ -34,6 +38,11 @@ public class AuthServiceImpl implements AuthService {
             throw new NaoAutenticadoException("Faça login para continuar.");
 
         return keycloakTokenService.renovar(refreshToken);
+    }
+
+    @Override
+    public void esqueciSenha(EsqueciSenhaDTO dto) {
+        keycloakAdminService.enviarRedefinicaoDeSenha(dto.email().trim().toLowerCase());
     }
 
     // sem sessao nao ha o que encerrar. O access token ja emitido continuaria valendo ate expirar,
