@@ -7,7 +7,7 @@
 -- carregado antes deste arquivo. Aqui os municipios sao referenciados pelo codigo IBGE.
 
 -- =========================================================================
--- usuarios (o login fica no Keycloak; aqui so o perfil, por isso senhaHash fica nulo).
+-- usuarios (o login e a senha ficam no Keycloak; aqui so o perfil).
 -- keycloakId = id do mesmo usuario em keycloak/fincontrol-realm.json (senha = primeiro nome + 12345).
 -- dataCadastro vai explicita: o @PrePersist nao roda em SQL puro e o painel conta os cadastros por ela.
 -- Cadastro completo = documento, perfil fiscal e endereco (CEPs reais, conferidos no ViaCEP).

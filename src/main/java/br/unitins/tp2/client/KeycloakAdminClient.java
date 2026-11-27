@@ -13,6 +13,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -28,6 +29,20 @@ public interface KeycloakAdminClient {
     @POST
     @Path("/users")
     Response criarUsuario(@HeaderParam("Authorization") String autorizacao, KeycloakUsuario usuario);
+
+    // exact=true: so o e-mail identico (sem ele a busca e por trecho)
+    @GET
+    @Path("/users")
+    List<KeycloakUsuario> buscarPorEmail(@HeaderParam("Authorization") String autorizacao,
+            @QueryParam("email") String email, @QueryParam("exact") boolean exato);
+
+    // o Keycloak envia um e-mail com um link para as acoes pedidas (ex.: UPDATE_PASSWORD);
+    // lifespan = validade do link em segundos
+    @PUT
+    @Path("/users/{id}/execute-actions-email")
+    void enviarEmailDeAcoes(@HeaderParam("Authorization") String autorizacao, @PathParam("id") String id,
+            @QueryParam("client_id") String clientId, @QueryParam("redirect_uri") String voltarPara,
+            @QueryParam("lifespan") int validadeEmSegundos, List<String> acoes);
 
     // atualizacao parcial: so os campos enviados mudam (ex.: {"enabled": false})
     @PUT

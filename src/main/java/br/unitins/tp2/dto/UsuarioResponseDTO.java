@@ -4,7 +4,6 @@ import br.unitins.tp2.model.AtividadeMei;
 import br.unitins.tp2.model.Papel;
 import br.unitins.tp2.model.PerfilFiscal;
 
-// senhaHash nunca sai da API
 public record UsuarioResponseDTO(
     Long id,
     String nome,

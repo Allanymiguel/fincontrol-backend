@@ -1,9 +1,22 @@
 package br.unitins.tp2.service;
 
+import br.unitins.tp2.client.KeycloakTokenResponse;
+import br.unitins.tp2.dto.EsqueciSenhaDTO;
+import br.unitins.tp2.dto.LoginRequestDTO;
 import br.unitins.tp2.model.Usuario;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
-// O login e feito direto no Keycloak (pelo front); o back so valida o token e acha o perfil local
+// Login pelo back: repassa e-mail/senha ao Keycloak e devolve os tokens que ele emitiu
 public interface AuthService {
+
+    KeycloakTokenResponse login(@NotNull(message = "Informe o e-mail e a senha.") @Valid LoginRequestDTO login);
+
+    KeycloakTokenResponse renovar(String refreshToken);
+
+    void logout(String refreshToken);
+
+    void esqueciSenha(@NotNull(message = "Informe o e-mail.") @Valid EsqueciSenhaDTO dto);
 
     Usuario usuarioLogado(String keycloakId);
 }

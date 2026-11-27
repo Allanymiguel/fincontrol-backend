@@ -15,16 +15,17 @@ API do FinControl (Tópicos II, UNITINS): Quarkus 3.38 com Hibernate/Panache, Po
 0. **Variáveis de ambiente:** copie o modelo para `.env` na raiz do projeto
    (`cp .env.example .env`; no Windows, `copy .env.example .env`) e troque `DB_PASSWORD` pela senha do seu
    PostgreSQL. O `.env` está no `.gitignore` e é lido pelo Quarkus e pelo `docker compose`; sem ele nenhum
-   dos dois sobe. Cada variável está comentada no `.env.example`. Quem já tinha um `.env` precisa copiar dele
-   o bloco **S3** (`S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`).
+   dos dois sobe. Cada variável está comentada no `.env.example`. Quem já tinha um `.env` precisa copiar dele `FRONTEND_URL` e `AUTH_COOKIE_SECURE` (no
+   dev há valores padrão) e o bloco **S3** (`S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`).
 1. **PostgreSQL** rodando, com o banco criado (`create database topicos2db;`).
 2. **Keycloak, Mailpit e SeaweedFS:** `docker compose up -d`. Keycloak em <http://localhost:8180> (com o tema
-   de login do FinControl), Mailpit em <http://localhost:8025> (caixa dos e-mails de "Esqueci minha senha") e
+   do FinControl), Mailpit em <http://localhost:8025> (caixa dos e-mails de "Esqueci minha senha") e
    SeaweedFS com a API S3 em `127.0.0.1:8333` e os arquivos em <http://127.0.0.1:8888/buckets/fincontrol/>.
    Detalhes em [KEYCLOAK.md](KEYCLOAK.md). Quem já tinha o Keycloak rodando de uma versão anterior precisa
    recriá-lo uma vez (`docker compose down` e `docker compose up -d`) para importar o realm novo.
 3. **Back:** `./mvnw quarkus:dev` (no Windows, `.\mvnw.cmd quarkus:dev`). API em <http://localhost:8080> e
-   Swagger em <http://localhost:8080/q/swagger-ui> (o **Authorize** faz o login na tela do Keycloak).
+   Swagger em <http://localhost:8080/q/swagger-ui> (para chamar rotas protegidas, cole em **Authorize** o token de
+   `POST /auth/login`).
 4. **Front:** veja o README do `fincontrol-frontend`.
 
 ## Dados de demonstração
@@ -39,7 +40,8 @@ O banco usa `drop-and-create`: **a cada subida do back ele é recriado** e carre
 Para voltar ao estado inicial, basta reiniciar o back. Para zerar também o Keycloak (contas criadas nos testes):
 `docker compose down` e `docker compose up -d`.
 
-O login é feito na tela do Keycloak (Authorization Code com PKCE): a senha não passa pelo front nem pela API.
+O login é feito pela API (`POST /auth/login`), que consulta o Keycloak: o front não fala com ele e a senha não é
+gravada no banco. Detalhes em [KEYCLOAK.md](KEYCLOAK.md).
 
 Usuários (senha = primeiro nome em minúsculas + `12345`, ex.: `carla12345`):
 
@@ -162,7 +164,7 @@ autenticação.
 ./mvnw test
 ```
 
-147 testes (JUnit 5). Os unitários (sem banco) cobrem códigos dos enums, indicadores do painel, auditoria,
+215 testes (JUnit 5). Os unitários (sem banco) cobrem códigos dos enums, indicadores do painel, auditoria,
 regras de CEP, cobrança, acesso, exportação CSV e as regras das imagens. Os de integração (`@QuarkusTest`) cobrem
-as imagens dos planos e o catálogo com um **PostgreSQL descartável do Dev Services** (Testcontainers) e o S3
+login, controle de acesso (401 e 403), as imagens dos planos e o catálogo com um **PostgreSQL descartável do Dev Services** (Testcontainers) e o S3
 simulado (`@InjectMock ArmazenamentoService`): **o Docker precisa estar rodando** para o `./mvnw test`.

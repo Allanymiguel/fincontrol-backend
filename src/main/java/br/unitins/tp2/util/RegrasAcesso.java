@@ -11,7 +11,7 @@ import java.util.Set;
 public final class RegrasAcesso {
 
     public static final String CONTA_DESATIVADA = "Conta desativada. Fale com o administrador.";
-    public static final String SESSAO_ENCERRADA = "Sua sessão foi encerrada pelo administrador. Faça login novamente.";
+    public static final String SESSAO_ENCERRADA = "Sua sessão foi encerrada. Faça login novamente.";
 
     // quantos ids de sessao revogada guardar por usuario (os mais recentes)
     public static final int MAX_SESSOES_REVOGADAS = 40;
@@ -24,7 +24,7 @@ public final class RegrasAcesso {
         return CONTA_DESATIVADA.equals(mensagem) || SESSAO_ENCERRADA.equals(mensagem);
     }
 
-    // Conta desativada vale na hora (sem esperar o token expirar). Sessao encerrada pelo admin: o
+    // Conta desativada vale na hora (sem esperar o token expirar). Sessao encerrada (logout ou admin): o
     // "sid" do token esta entre as revogadas (comparar ids nao depende do relogio do Keycloak).
     // Nulo = pode seguir.
     public static String motivoParaRecusar(boolean ativo, String sessoesRevogadas, String sid) {
