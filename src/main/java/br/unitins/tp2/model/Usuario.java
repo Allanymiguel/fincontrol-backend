@@ -21,10 +21,6 @@ public class Usuario extends DefaultEntity {
     @Column(length = 120, nullable = false, unique = true)
     private String email;
 
-    // fica nulo enquanto a autenticacao for do Keycloak (que guarda a senha dele)
-    @Column(length = 60)
-    private String senhaHash;
-
     // CPF (PF) ou CNPJ (MEI/ME), salvo somente com numeros
     @Column(length = 14)
     private String documento;
@@ -82,14 +78,6 @@ public class Usuario extends DefaultEntity {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getSenhaHash() {
-        return senhaHash;
-    }
-
-    public void setSenhaHash(String senhaHash) {
-        this.senhaHash = senhaHash;
     }
 
     public String getDocumento() {
