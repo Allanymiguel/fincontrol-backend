@@ -5,6 +5,8 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -18,12 +20,17 @@ import org.junit.jupiter.api.Test;
 import br.unitins.tp2.client.KeycloakTokenResponse;
 import br.unitins.tp2.exception.NaoAutenticadoException;
 import br.unitins.tp2.exception.ServicoExternoException;
+import br.unitins.tp2.security.VerificacaoAcesso;
 import br.unitins.tp2.service.KeycloakTokenService;
+import br.unitins.tp2.testes.Tokens;
+import br.unitins.tp2.testes.Usuarios;
+import br.unitins.tp2.util.RegrasAcesso;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
+import jakarta.inject.Inject;
 
 // Login, renovacao e logout pela API, com o Keycloak simulado
 @QuarkusTest
@@ -35,6 +42,9 @@ class AuthResourceTest {
 
     @InjectMock
     KeycloakTokenService keycloak;
+
+    @Inject
+    VerificacaoAcesso verificacao;
 
     private static ValidatableResponse entrar(String email, String senha) {
         return given().contentType(ContentType.JSON).body(Map.of("email", email, "senha", senha))
@@ -148,6 +158,29 @@ class AuthResourceTest {
                 .header("Set-Cookie", containsString("Max-Age=0"));
 
         verify(keycloak).logout("refresh-0");
+    }
+
+    @Test
+    void logoutRevogaASessaoNoPerfilLocal() {
+        String refresh = Tokens.comClaims("{\"sub\":\"" + Usuarios.JOAO_SUB + "\",\"sid\":\"sessao-logout\"}");
+        when(keycloak.logout(refresh)).thenReturn(true);
+
+        doApp().cookie(COOKIE, refresh).when().post("/auth/logout").then().statusCode(204);
+
+        assertEquals(RegrasAcesso.SESSAO_ENCERRADA,
+                verificacao.motivoParaRecusar(Usuarios.JOAO_SUB, "sessao-logout"));
+        assertNull(verificacao.motivoParaRecusar(Usuarios.JOAO_SUB, "outra-sessao"));
+    }
+
+    @Test
+    void logoutRecusadoPeloKeycloakNaoRevogaNada() {
+        String forjado = Tokens.comClaims("{\"sub\":\"" + Usuarios.JOAO_SUB + "\",\"sid\":\"sessao-forjada\"}");
+        when(keycloak.logout(forjado)).thenReturn(false);
+
+        doApp().cookie(COOKIE, forjado).when().post("/auth/logout").then().statusCode(204)
+                .header("Set-Cookie", containsString("Max-Age=0"));
+
+        assertNull(verificacao.motivoParaRecusar(Usuarios.JOAO_SUB, "sessao-forjada"));
     }
 
     @Test

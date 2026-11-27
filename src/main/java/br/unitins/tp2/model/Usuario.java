@@ -48,8 +48,8 @@ public class Usuario extends DefaultEntity {
     @Embedded
     private Endereco endereco;
 
-    // "encerrar sessoes" do admin: quando foi e os ids das sessoes encerradas (claim "sid"), cujo
-    // token o ContaAtivaAugmentor recusa (ids separados por virgula, so os mais recentes)
+    // quando o admin usou "encerrar sessoes" e os ids das sessoes encerradas por ele ou pelo logout
+    // (claim "sid"), cujo token o ContaAtivaAugmentor recusa (separados por virgula, so os recentes)
     private LocalDateTime sessoesEncerradasEm;
 
     @Column(length = 2000)

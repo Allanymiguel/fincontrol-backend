@@ -11,7 +11,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 // Roda em toda requisicao autenticada, depois de o token ser validado: barra na hora a conta
-// desativada e o token de uma sessao que o admin encerrou. Sem isso, o access token (30 min no
+// desativada e o token de uma sessao encerrada (logout ou admin). Sem isso, o access token (30 min no
 // realm) continuaria valendo ate expirar.
 @ApplicationScoped
 public class ContaAtivaAugmentor implements SecurityIdentityAugmentor {

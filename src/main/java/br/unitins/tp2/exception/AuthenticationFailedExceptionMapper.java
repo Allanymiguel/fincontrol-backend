@@ -30,7 +30,7 @@ public class AuthenticationFailedExceptionMapper implements ExceptionMapper<Auth
         p.type = baseUrl + "/errors/unauthorized";
         p.title = "Não autenticado";
         p.status = Response.Status.UNAUTHORIZED.getStatusCode();
-        // conta desativada ou sessao encerrada pelo admin (ContaAtivaAugmentor): o motivo;
+        // conta desativada ou sessao encerrada (ContaAtivaAugmentor): o motivo;
         // demais casos (assinatura, emissor, validade): mensagem generica
         p.detail = RegrasAcesso.isMotivoConhecido(e.getMessage()) ? e.getMessage()
                 : "Sessão inválida ou expirada. Faça login novamente.";
