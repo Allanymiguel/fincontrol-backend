@@ -10,7 +10,7 @@ equivalente, num commit próprio no repositório dele.
 
 Documentação para humanos (não repetir aqui, consultar quando precisar):
 - `README.md`: como subir, usuários de demonstração, endpoints da área administrativa, regras de cupom e pagamento.
-- `KEYCLOAK.md`: login com PKCE, realm, clients, usar sem Keycloak, produção e as regras RN12, RN13 e RN16.
+- `KEYCLOAK.md`: sessão pela API, realm, client, usar sem Keycloak, produção e as regras RN12, RN13 e RN16.
 
 ## Comandos
 
@@ -48,11 +48,12 @@ Pacote `br.unitins.tp2`, em camadas:
 | `converter` | Um `XxxConverter extends EnumIdConverter<Xxx>` (`autoApply`) por enum |
 | `exception` | Exceções de domínio e `ExceptionMapper`s que respondem `Problem` (RFC 9457) |
 | `util` | Regras puras (`RegrasCupom`, `RegrasCobranca`, `RegrasCep`...), testáveis sem Quarkus |
-| `security` | `ContaAtivaAugmentor`: recusa token de conta desativada ou de sessão encerrada |
+| `security` | `ContaAtivaAugmentor`: recusa token de conta desativada ou de sessão encerrada. `CookieSessao`: cookie do refresh token |
 | `client` | REST clients: Keycloak (token e Admin API) e ViaCEP |
 | `service/ArmazenamentoService` | Object Storage S3 (`S3Client` do `quarkus-amazon-s3`): enviar, baixar e apagar objetos. `VerificacaoBucket` cria o bucket na subida |
 
-O login acontece só no Keycloak; o back nunca emite nem assina token. `UsuarioLogadoService.atual()` resolve o
+O front fala só com o back, que faz login, renovação e logout no Keycloak (`AuthResource`, `KeycloakTokenService`);
+o back nunca assina token nem guarda senha. `UsuarioLogadoService.atual()` resolve o
 `Usuario` local pelo claim `sub` (`keycloakId`). Criar ou editar um usuário também altera o Keycloak pela Admin API
 (`KeycloakAdminService`).
 
@@ -61,7 +62,8 @@ O login acontece só no Keycloak; o back nunca emite nem assina token. `UsuarioL
 - **Idioma:** classes, métodos, campos e endpoints em português (`buscarPorId`, `/admin/cobrancas`).
   Comentários de código em português **sem acentos**; mensagens para o usuário em pt-BR **com acentos**.
 - **Endpoints novos:** sempre com `@RolesAllowed("USER")` ou `@RolesAllowed("ADMIN")`. Rota pública só com
-  `@PermitAll` explícito (cadastro, consulta de CEP). Como `quarkus.http.auth.proactive=false`, endpoint sem
+  `@PermitAll` explícito (login e sessão, cadastro, consulta de CEP). Endpoint que age só com o cookie exige o header
+  `X-Requested-With`. Como `quarkus.http.auth.proactive=false`, endpoint sem
   anotação fica aberto. Listagens recebem `page` e `pageSize` (padrão `0` e `10`) e devolvem
   `PageResponse.of(itens, page, pageSize, total, mapper)`. Os headers `X-Page`, `X-Page-Size` e `X-Total-Count`
   são adicionados pelo `PaginacaoHeadersFilter`; não os coloque à mão.
